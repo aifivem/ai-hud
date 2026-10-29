@@ -1,28 +1,22 @@
 # ai-hud
 
-What it does in 1-2 sentences. What it depends on (ai-core, other scripts).
+The HUD (status rings, money, speedometer, street, voice) and the character's needs: hunger, thirst, stress. Depends on ai-core (character metadata, money, admin panel), reads pma-voice state when it runs, takes item effects from ai-inventory. Research and decisions: `docs/research/ai-hud.md`.
 
 ## Decisions
 
-- Why it is built this way; owner decisions; rejected alternatives and why.
+- Needs live in ai-core's character metadata (`hunger`, `thirst`, `stress`, 0-100: the QB keys); ai-hud is their only writer (`server/needs.ts`), decays them every minute and sends the owner a snapshot at load plus a delta when a rounded value changes.
+- Stress only increases from the client (`ai-hud:stress`, 1-5, rate limited); everything else is server side.
+- Client values (health, armour, vehicle, street, voice) are read on timers and sent to the NUI only on change; the vehicle timer exists only in a vehicle, the shooting check only while armed.
+- The HUD hides without a character, in the pause menu and during screen fades.
 
 ## Contracts
 
-- Exports, callback/event names (direction and payload type, pointing at the file in `resource/common/`), state bag keys, DB tables, links to other scripts.
-
-## Pitfalls
-
-- Problems already paid for that reading the code does not reveal.
+- Events: `resource/common/hud.ts`. Server exports `GetNeeds(source)`, `SetNeed(source, need, value)`, `AddNeed(source, need, delta)`.
+- Listens to `ai-inventory:usedItem` (status values) and ai-core's `playerLoaded` / `playerUnloaded`.
+- Reads the vehicle state bag `fuel` (a fuel script sets it) and pma-voice's local events.
 
 ## Entry points
 
-- For X start at `resource/server/...`.
-- For Y in the NUI see `web/src/features/...`.
-
-<!--
-Rules (this comment may stay in the copy):
-- Delete a section that would stay empty. No file, function or column lists: what reading the code shows does not go here.
-- No dates, phases, TODOs or "changed/removed" notes; current truth in imperative form.
-- Knowledge about one folder (a subsystem, the NUI) goes into a CLAUDE.md in that folder (resource/server/<topic>/CLAUDE.md,
-  web/CLAUDE.md); it loads automatically when a file there is read. This root file keeps what the whole script needs.
--->
+- Needs: `resource/server/needs.ts`; panel `server/schema.ts`.
+- Client: state and visibility `resource/client/index.ts`, value watchers `client/watchers.ts`.
+- NUI: `web/src/features/Hud.tsx`; browser preview `bun run webdev` (`?vehicle=1`).
