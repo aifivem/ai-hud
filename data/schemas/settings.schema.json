@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ai-hud/data/settings.json",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "This file's JSON Schema (for editors)."
+    },
+    "hungerRate": {
+      "description": "Hunger drop: Points lost every minute from 100. 0.25 empties in about 6.5 hours of play.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "thirstRate": {
+      "description": "Thirst drop: Points lost every minute from 100. 0.25 empties in about 6.5 hours of play.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "stressRelief": {
+      "description": "Stress fade: Stress points that fade every minute. Shooting and fast driving add stress.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "emptyDamage": {
+      "description": "Damage when empty: Health lost every 10 seconds while food or water is at 0. 0 turns it off.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 50
+    },
+    "speedUnit": {
+      "description": "Speed unit",
+      "enum": [
+        "kmh",
+        "mph"
+      ]
+    },
+    "show": {
+      "type": "object",
+      "properties": {
+        "needs": {
+          "description": "Health and needs",
+          "type": "boolean"
+        },
+        "money": {
+          "description": "Money",
+          "type": "boolean"
+        },
+        "speedometer": {
+          "description": "Speedometer",
+          "type": "boolean"
+        },
+        "street": {
+          "description": "Street name",
+          "type": "boolean"
+        },
+        "voice": {
+          "description": "Voice: Microphone and voice range (needs pma-voice).",
+          "type": "boolean"
+        },
+        "identity": {
+          "description": "Name and job: Top right: the job, its grade, the server id and the character name.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "needs",
+        "money",
+        "speedometer",
+        "street",
+        "voice",
+        "identity"
+      ]
+    }
+  },
+  "required": [
+    "hungerRate",
+    "thirstRate",
+    "stressRelief",
+    "emptyDamage",
+    "speedUnit",
+    "show"
+  ]
+}
