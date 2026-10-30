@@ -688,7 +688,10 @@ var AdminPanel = class {
 	constructor(schema) {
 		this.schema = schema;
 		for (let [name, spec] of Object.entries(schema.files)) this.load(name, spec);
-		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges)), setImmediate(() => core$15.RegisterAdminPanel(this.resource));
+		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges), { rate: {
+			count: 4,
+			windowMs: 1e4
+		} }), setImmediate(() => core$15.RegisterAdminPanel(this.resource));
 	}
 	get(file) {
 		return this.data.get(file) ?? {};
@@ -1483,20 +1486,25 @@ const hudSchema = {
 		let needs = this.byPlayer.get(source);
 		if (!needs) return;
 		let before = Math.round(needs[need]);
-		needs[need] = clamp(value), core$1.SetMeta(source, need, Math.round(needs[need] * 100) / 100), Math.round(needs[need]) !== before && emitNet(EVENTS.need, source, need, Math.round(needs[need]));
+		needs[need] = clamp(value);
+		let now = Math.round(needs[need]);
+		now !== before && (core$1.SetMeta(source, need, now), emitNet(EVENTS.need, source, need, now));
 	}
 	add(source, need, delta) {
 		let needs = this.byPlayer.get(source);
 		needs && this.set(source, need, needs[need] + delta);
 	}
+	slice = 0;
 	tick() {
-		for (let source of this.byPlayer.keys()) this.add(source, "hunger", -settings.value.hungerRate), this.add(source, "thirst", -settings.value.thirstRate), this.add(source, "stress", -settings.value.stressRelief);
+		let slice = this.slice;
+		this.slice = (slice + 1) % 60;
+		for (let source of this.byPlayer.keys()) source % 60 === slice && (this.add(source, "hunger", -settings.value.hungerRate), this.add(source, "thirst", -settings.value.thirstRate), this.add(source, "stress", -settings.value.stressRelief));
 	}
 }();
 onCharacter({
 	loaded: (source) => needs.load(source),
 	unloaded: (source) => needs.drop(source)
-}), every(6e4, () => needs.tick(), { name: "needs" }), on(CORE.itemUsedEvent, (source, _name, status) => {
+}), every(1e3, () => needs.tick(), { name: "needs" }), on(CORE.itemUsedEvent, (source, _name, status) => {
 	if (isRecord(status)) for (let [need, value] of Object.entries(status)) isNeed(need) && typeof value == "number" && needs.add(source, need, value);
 }), onClientEvent(EVENTS.stress, {
 	args: oneArg((v) => {

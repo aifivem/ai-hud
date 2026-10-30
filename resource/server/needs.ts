@@ -29,8 +29,10 @@ const isNeed = (v: unknown): v is Need =>
   typeof v === "string" && (NEEDS as readonly string[]).includes(v);
 
 /**
- * Needs of every loaded character, kept in ai-core's metadata (`hunger`, `thirst`, `stress`: the keys QB scripts read)
- * and mirrored here. The owner gets a snapshot at load and a delta whenever a rounded value changes.
+ * Needs of every loaded character, kept here with decimals and written to ai-core's metadata (`hunger`, `thirst`,
+ * `stress`: the keys QB scripts read) as whole numbers only when the whole number changes, which is also when the
+ * owner gets a delta. The minute's decay runs in 60 slices (one per second, each player in the slice of its id), so a
+ * full server never writes every player in one frame.
  */
 class NeedsStore {
   private readonly byPlayer = new PlayerMap<Needs>();
@@ -58,9 +60,10 @@ class NeedsStore {
     if (!needs) return;
     const before = Math.round(needs[need]);
     needs[need] = clamp(value);
-    core.SetMeta(source, need, Math.round(needs[need] * 100) / 100);
-    if (Math.round(needs[need]) !== before)
-      emitNet(EVENTS.need, source, need, Math.round(needs[need]));
+    const now = Math.round(needs[need]);
+    if (now === before) return;
+    core.SetMeta(source, need, now);
+    emitNet(EVENTS.need, source, need, now);
   }
 
   add(source: number, need: Need, delta: number): void {
@@ -68,9 +71,14 @@ class NeedsStore {
     if (needs) this.set(source, need, needs[need] + delta);
   }
 
-  /** One minute passed: hunger and thirst drop, stress fades. */
+  private slice = 0;
+
+  /** One second passed: this second's slice of players had a minute pass (hunger and thirst drop, stress fades). */
   tick(): void {
+    const slice = this.slice;
+    this.slice = (slice + 1) % 60;
     for (const source of this.byPlayer.keys()) {
+      if (source % 60 !== slice) continue;
       this.add(source, "hunger", -settings.value.hungerRate);
       this.add(source, "thirst", -settings.value.thirstRate);
       this.add(source, "stress", -settings.value.stressRelief);
@@ -85,7 +93,7 @@ onCharacter({
   loaded: (source) => needs.load(source),
   unloaded: (source) => needs.drop(source),
 });
-every(60_000, () => needs.tick(), { name: "needs" });
+every(1000, () => needs.tick(), { name: "needs" });
 
 // Items with hunger / thirst / stress values (ai-core's item use event).
 on(CORE.itemUsedEvent, (source: number, _name: string, status: unknown) => {
