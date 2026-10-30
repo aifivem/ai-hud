@@ -1536,11 +1536,10 @@ onCharacter({
 const core = resourceExport("ai-core"), labels = new class {
 	sent = new PlayerMap();
 	view(source) {
-		let jobs = core.GetJobs(source);
-		if (!jobs) return null;
-		let duty = core.GetDutyJob(source), pick = jobs.find((j) => j.job === duty) ?? jobs[0];
+		if (online.jobs(source).length === 0) return null;
+		let pick = core.GetCurrentJob(source);
 		if (!pick) return null;
-		let definition = core.GetJobDefinition(pick.job);
+		let duty = online.dutyJob(source), definition = core.GetJobDefinition(pick.job);
 		return {
 			label: definition?.label ?? pick.job,
 			grade: definition?.grades[pick.grade]?.label ?? "",

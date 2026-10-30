@@ -1,6 +1,7 @@
 import {
   onCharacter,
   onClientCallback,
+  online,
   PlayerMap,
   resourceExport,
 } from "@aicore-fivem/lib/server";
@@ -10,18 +11,17 @@ import { EVENTS, type JobView } from "common/hud";
 const core = resourceExport("ai-core");
 
 /**
- * The job the HUD shows top right (the on-duty job, else the first membership, as the framework bridges pick it) with
- * ai-core's labels. The client takes a snapshot when it starts; the owner gets a delta when the shown job changes.
+ * The job the HUD shows top right (ai-core's current job: on duty, else last on duty, else the first; the one the
+ * framework bridges show) with ai-core's labels; nothing without a membership. The client takes a snapshot when it starts; the owner gets a delta when the shown job changes.
  */
 class JobLabels {
   private readonly sent = new PlayerMap<string>();
 
   private view(source: number): JobView | null {
-    const jobs = core.GetJobs(source);
-    if (!jobs) return null;
-    const duty = core.GetDutyJob(source);
-    const pick = jobs.find((j) => j.job === duty) ?? jobs[0];
+    if (online.jobs(source).length === 0) return null;
+    const pick = core.GetCurrentJob(source);
     if (!pick) return null;
+    const duty = online.dutyJob(source);
     // Definitions are read only here: the shown job changes rarely and only on load, job or duty changes.
     const definition = core.GetJobDefinition(pick.job);
     return {
