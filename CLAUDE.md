@@ -7,15 +7,15 @@ The HUD (lumihud-style status pills, money, speedometer, street, voice) and the 
 - Needs live in ai-core's character metadata (`hunger`, `thirst`, `stress`, 0-100: the QB keys); ai-hud is their only writer (`server/needs.ts`), decays them every minute and sends the owner a snapshot at load plus a delta when a rounded value changes.
 - Stress only increases from the client (`ai-hud:stress`, 1-5, rate limited); everything else is server side.
 - Client values (health, armour, vehicle, street, voice) are read on timers and sent to the NUI only on change; the vehicle timer exists only in a vehicle, the shooting check only while armed.
-- The HUD hides without a character, in the pause menu and during screen fades.
+- The HUD hides without a character, in the pause menu, during screen fades and while a full-screen UI is open (ai-core's `CORE.clientHudVisibleEvent`, lib `hud.onChange`).
 - Top right shows the job (the on-duty job, else the first membership, as the bridges pick it) with ai-core's labels, the server id and the character name. The client has no job definitions, so `server/job.ts` resolves the labels: the client takes a snapshot through the `ai-hud:job` callback at start, the owner gets `ai-hud:client:job` when the shown job changes. Name and id come from ai-core's player data on the client, seeded from its `GetPlayerData` export (after a restart of ai-hud nothing is pushed again).
-- Voice: pma-voice range from `LocalPlayer.state.proximity.index` at start, then its `setTalkingMode` / `radioActive` events; the NUI gets a voice message only when talking, range or radio changed.
+- Voice: pma-voice range from its player state `proximity.index` (lib `PlayerState` mirror) at start, then its `setTalkingMode` / `radioActive` events; the NUI gets a voice message only when talking, range or radio changed.
 
 ## Contracts
 
 - Events: `resource/common/hud.ts`. Server exports `GetNeeds(source)`, `SetNeed(source, need, value)`, `AddNeed(source, need, delta)`.
 - Listens to ai-core's `itemUsed` (status values, from inventories that define them) and ai-core's `playerLoaded` / `playerUnloaded` / `jobsChanged` / `dutyChanged`; reads `GetJobs`, `GetDutyJob`, `GetJobDefinitions` only when the shown job may have changed.
-- Reads the vehicle state bag `fuel` (a fuel script sets it), the local player state `seatbelt` (boolean while a seatbelt resource runs, ai-smallresources) and pma-voice's local events.
+- Reads the vehicle state bag `fuel` (a fuel script sets it), the seat belt from ai-smallresources' `SEATBELT_EVENT` and `GetSeatbelt()` export and pma-voice's local events.
 
 ## Entry points
 

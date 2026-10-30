@@ -2,6 +2,7 @@ import {
   AdminWorld,
   cache,
   getPlayerData,
+  hud as uiHud,
   loadLocaleTexts,
   onCache,
   onServerEvent,
@@ -59,8 +60,15 @@ class Hud {
     send({ action: "needs", data: { [need]: value } });
   }
 
+  /** False while a full-screen UI is open (ai-core's HUD visibility, lib `hud`). */
+  uiAllows = true;
+
   updateVisible(): void {
-    const next = this.loaded && !IsPauseMenuActive() && !IsScreenFadedOut();
+    const next =
+      this.loaded &&
+      this.uiAllows &&
+      !IsPauseMenuActive() &&
+      !IsScreenFadedOut();
     if (next === this.visible) return;
     this.visible = next;
     send({ action: "visible", data: next });
@@ -129,6 +137,10 @@ on(CORE.clientPlayerUnloadedEvent, () => {
   hud.updateVisible();
 });
 onCache("weapon", (weapon) => hud.watchWeapon(weapon));
+uiHud.onChange((visible) => {
+  hud.uiAllows = visible;
+  hud.updateVisible();
+});
 setInterval(() => hud.updateVisible(), 250);
 setInterval(() => hud.starve(), 10_000);
 

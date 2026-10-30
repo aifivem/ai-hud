@@ -1,5 +1,14 @@
 import { SEATBELT_EVENT } from "@aicore-fivem/shared";
-import { cache, EntityState, getPlayerData, onCache, onPlayerData, optionalExport, PlayerState, stateNumber } from "@aicore-fivem/lib/client";
+import {
+  cache,
+  EntityState,
+  getPlayerData,
+  onCache,
+  onPlayerData,
+  optionalExport,
+  PlayerState,
+  stateNumber,
+} from "@aicore-fivem/lib/client";
 import { isRecord } from "@aicore-fivem/lib/shared";
 import {
   EVENTS,
@@ -10,9 +19,15 @@ import {
 
 const fuelState = new EntityState("fuel", stateNumber);
 /** pma-voice keeps the current range in the player state (`proximity.index`). */
-const voiceRange = new PlayerState("proximity", (v) => (isRecord(v) && typeof v.index === "number" ? v.index : undefined));
-let seatbelt: boolean | null = optionalExport("ai-smallresources")?.GetSeatbelt() ?? null;
-on(SEATBELT_EVENT, (worn: unknown) => (seatbelt = typeof worn === "boolean" ? worn : null));
+const voiceRange = new PlayerState("proximity", (v) =>
+  isRecord(v) && typeof v.index === "number" ? v.index : undefined,
+);
+let seatbelt: boolean | null =
+  optionalExport("ai-smallresources")?.GetSeatbelt() ?? null;
+on(
+  SEATBELT_EVENT,
+  (worn: unknown) => (seatbelt = typeof worn === "boolean" ? worn : null),
+);
 
 /** Vehicle classes without a seatbelt: motorcycles, cycles, boats, helicopters, planes, trains. */
 const NO_BELT = new Set([8, 13, 14, 15, 16, 21]);
@@ -115,8 +130,13 @@ export class Watchers {
     const speed = Math.round(
       this.settings().speedUnit === "mph" ? mps * 2.236936 : mps * 3.6,
     );
-    const fuel = Math.round(fuelState.get(vehicle) ?? GetVehicleFuelLevel(vehicle));
-    const belt = seatbelt === null || NO_BELT.has(GetVehicleClass(vehicle)) ? null : seatbelt;
+    const fuel = Math.round(
+      fuelState.get(vehicle) ?? GetVehicleFuelLevel(vehicle),
+    );
+    const belt =
+      seatbelt === null || NO_BELT.has(GetVehicleClass(vehicle))
+        ? null
+        : seatbelt;
     const info: VehicleInfo = {
       speed,
       fuel,
