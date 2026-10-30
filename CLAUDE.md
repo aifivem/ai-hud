@@ -13,7 +13,7 @@ The HUD (status rings, money, speedometer, street, voice) and the character's ne
 
 - Events: `resource/common/hud.ts`. Server exports `GetNeeds(source)`, `SetNeed(source, need, value)`, `AddNeed(source, need, delta)`.
 - Listens to `ai-inventory:usedItem` (status values) and ai-core's `playerLoaded` / `playerUnloaded`.
-- Reads the vehicle state bag `fuel` (a fuel script sets it) and pma-voice's local events.
+- Reads the vehicle state bag `fuel` (a fuel script sets it), the local player state `seatbelt` (boolean while a seatbelt resource runs, ai-smallresources) and pma-voice's local events.
 
 ## Entry points
 

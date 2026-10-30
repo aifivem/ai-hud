@@ -1,6 +1,9 @@
 import { cache, onCache, onPlayerData, getPlayerData } from "@aicore-fivem/lib/client";
 import { EVENTS, type NuiMessage, type Settings, type VehicleInfo } from "common/hud";
 
+/** Vehicle classes without a seatbelt: motorcycles, cycles, boats, helicopters, planes, trains. */
+const NO_BELT = new Set([8, 13, 14, 15, 16, 21]);
+
 export const send = (message: NuiMessage): void => SendNUIMessage(message);
 
 /**
@@ -75,8 +78,10 @@ export class Watchers {
     const speed = Math.round(this.settings().speedUnit === "mph" ? mps * 2.236936 : mps * 3.6);
     const state: unknown = Entity(vehicle).state.fuel;
     const fuel = Math.round(typeof state === "number" ? state : GetVehicleFuelLevel(vehicle));
-    const info: VehicleInfo = { speed, fuel, gear: GetVehicleCurrentGear(vehicle), rpm: Math.round(GetVehicleCurrentRpm(vehicle) * 100) / 100 };
-    const key = `${info.speed}|${info.fuel}|${info.gear}|${info.rpm}`;
+    const worn: unknown = LocalPlayer.state.seatbelt;
+    const belt = typeof worn !== "boolean" || NO_BELT.has(GetVehicleClass(vehicle)) ? null : worn;
+    const info: VehicleInfo = { speed, fuel, gear: GetVehicleCurrentGear(vehicle), rpm: Math.round(GetVehicleCurrentRpm(vehicle) * 100) / 100, belt };
+    const key = `${info.speed}|${info.fuel}|${info.gear}|${info.rpm}|${belt}`;
     if (key === this.lastVehicle) return;
     this.lastVehicle = key;
     send({ action: "vehicle", data: info });

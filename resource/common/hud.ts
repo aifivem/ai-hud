@@ -58,6 +58,8 @@ export interface VehicleInfo {
   fuel: number;
   gear: number;
   rpm: number;
+  /** The local `seatbelt` state; null without a seatbelt resource or in vehicles without a belt. */
+  belt: boolean | null;
 }
 
 /** Client -> NUI messages; each carries only what changed. */

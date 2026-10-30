@@ -99,6 +99,7 @@ function Speedometer() {
         <span className="tabular-nums" aria-label={t("UI_GEAR")}>
           {gear}
         </span>
+        {vehicle.belt === false && <span className="rounded-[0.4vh] bg-danger px-[0.6vh] text-[1vh] font-semibold uppercase text-text">{t("UI_BELT")}</span>}
         <div className="h-[0.5vh] flex-1 overflow-hidden rounded-full bg-raised" aria-label={t("UI_FUEL")}>
           <div className={`h-full rounded-full ${vehicle.fuel < 15 ? "bg-danger" : "bg-accent"}`} style={{ width: `${vehicle.fuel}%` }} />
         </div>

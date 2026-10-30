@@ -11,6 +11,7 @@
   "UI_MPH": "mph",
   "UI_GEAR": "Gear",
   "UI_FUEL": "Fuel",
+  "UI_BELT": "Belt",
   "UI_NEUTRAL": "N",
   "UI_REVERSE": "R",
   "ADMIN_TITLE": "HUD",
