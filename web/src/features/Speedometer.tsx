@@ -1,24 +1,24 @@
-import type { ReactNode } from "react"
-import { faGasPump, faUserSlash } from "@fortawesome/free-solid-svg-icons"
-import { useLang } from "../lib/lang"
-import { useAppSelector } from "../store/hud"
-import { DANGER, IconCircle, TEXT_SHADOW } from "./parts"
+import type { ReactNode } from "react";
+import { faGasPump, faUserSlash } from "@fortawesome/free-solid-svg-icons";
+import { useLang } from "../lib/lang";
+import { useAppSelector } from "../store/hud";
+import { DANGER, IconCircle, TEXT_SHADOW } from "./parts";
 
 /** Circumference of the r=48 gauge circle in its 100-unit viewBox. */
-const C = 2 * Math.PI * 48
+const C = 2 * Math.PI * 48;
 /** Tick marks on the left half of the gauge (6 to 12 o'clock), every fifth one long. */
 const TICKS = Array.from({ length: 21 }, (_, i) => {
-  const a = Math.PI / 2 + (i / 20) * Math.PI
-  const long = i % 5 === 0
-  const r0 = long ? 38 : 40
+  const a = Math.PI / 2 + (i / 20) * Math.PI;
+  const long = i % 5 === 0;
+  const r0 = long ? 38 : 40;
   return {
     x1: 50 + r0 * Math.cos(a),
     y1: 50 + r0 * Math.sin(a),
     x2: 50 + 43 * Math.cos(a),
     y2: 50 + 43 * Math.sin(a),
     long,
-  }
-})
+  };
+});
 
 /** A half arc (left: bottom to top over 9 o'clock, right: bottom to top over 3 o'clock) filled to `value` 0-1. */
 function HalfArc({
@@ -26,15 +26,15 @@ function HalfArc({
   value,
   color,
 }: {
-  side: "left" | "right"
-  value: number
-  color: string
+  side: "left" | "right";
+  value: number;
+  color: string;
 }) {
   const transform =
     side === "left"
       ? "rotate(90 50 50)"
-      : "rotate(90 50 50) scale(1 -1) translate(0 -100)"
-  const half = C / 2
+      : "rotate(90 50 50) scale(1 -1) translate(0 -100)";
+  const half = C / 2;
   return (
     <>
       <circle
@@ -62,7 +62,7 @@ function HalfArc({
         style={{ transition: "stroke-dasharray 150ms linear" }}
       />
     </>
-  )
+  );
 }
 
 /** Small box of the gear row (lumihud `speedometer_gear`). */
@@ -70,31 +70,31 @@ const Gear = ({
   children,
   active = false,
 }: {
-  children: ReactNode
-  active?: boolean
+  children: ReactNode;
+  active?: boolean;
 }) => (
   <span
     className={`flex h-[2.5vh] w-[1.8vh] items-center justify-center rounded-[0.3vh] bg-tgi-dark text-[1.2vh] ${active ? "text-tgi-green" : "text-white/40"}`}
   >
     {children}
   </span>
-)
+);
 
 /** lumihud car gauge: rpm arc on the left, fuel arc on the right, gears over the three-digit speed, unit under it. */
 export function Speedometer() {
-  const t = useLang()
-  const vehicle = useAppSelector((s) => s.hud.vehicle)
-  const unit = useAppSelector((s) => s.hud.settings.speedUnit)
-  if (!vehicle) return null
+  const t = useLang();
+  const vehicle = useAppSelector((s) => s.hud.vehicle);
+  const unit = useAppSelector((s) => s.hud.settings.speedUnit);
+  if (!vehicle) return null;
   const numeric =
-    !(vehicle.speed === 0 && vehicle.gear <= 1) && vehicle.gear !== 0
+    !(vehicle.speed === 0 && vehicle.gear <= 1) && vehicle.gear !== 0;
   const gear = numeric
     ? String(vehicle.gear)
     : vehicle.gear === 0 && vehicle.speed !== 0
       ? t("UI_REVERSE")
-      : t("UI_NEUTRAL")
-  const digits = String(Math.min(999, Math.max(0, Math.round(vehicle.speed))))
-  const lowFuel = vehicle.fuel < 15
+      : t("UI_NEUTRAL");
+  const digits = String(Math.min(999, Math.max(0, Math.round(vehicle.speed))));
+  const lowFuel = vehicle.fuel < 15;
   return (
     <div className="fixed right-[3vh] bottom-[3vh] size-[22vh]">
       <div className="absolute inset-[0.5vh] [filter:drop-shadow(0.15vh_0.1vh_0_rgba(0,0,0,0.75))]">
@@ -170,5 +170,5 @@ export function Speedometer() {
         />
       </span>
     </div>
-  )
+  );
 }

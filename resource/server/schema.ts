@@ -1,4 +1,4 @@
-import type { PanelSchema } from "@aicore-fivem/shared"
+import type { PanelSchema } from "@aicore-fivem/shared";
 
 /** ai-hud's panel: how fast needs drop, what an empty need costs, what the HUD shows. */
 export const hudSchema: PanelSchema = {
@@ -133,4 +133,4 @@ export const hudSchema: PanelSchema = {
       ],
     },
   ],
-}
+};

@@ -2,27 +2,27 @@ import {
   configureStore,
   createSlice,
   type PayloadAction,
-} from "@reduxjs/toolkit"
-import { useSelector } from "react-redux"
+} from "@reduxjs/toolkit";
+import { useSelector } from "react-redux";
 import type {
   JobView,
   Needs,
   Settings,
   VehicleInfo,
   Vitals,
-} from "../../../resource/common/hud"
+} from "../../../resource/common/hud";
 
 interface HudState {
-  settings: Settings
-  visible: boolean
-  needs: Needs
-  vitals: Vitals
-  money: Record<string, number>
-  vehicle: VehicleInfo | null
-  street: { street: string; zone: string }
-  voice: { talking: boolean; mode: number; radio: boolean }
-  identity: { serverId: number; name: string } | null
-  job: JobView | null
+  settings: Settings;
+  visible: boolean;
+  needs: Needs;
+  vitals: Vitals;
+  money: Record<string, number>;
+  vehicle: VehicleInfo | null;
+  street: { street: string; zone: string };
+  voice: { talking: boolean; mode: number; radio: boolean };
+  identity: { serverId: number; name: string } | null;
+  job: JobView | null;
 }
 
 const initialState: HudState = {
@@ -51,7 +51,7 @@ const initialState: HudState = {
   voice: { talking: false, mode: 2, radio: false },
   identity: null,
   job: null,
-}
+};
 
 /** What the HUD draws; every message from the client carries only what changed. */
 const hud = createSlice({
@@ -74,16 +74,16 @@ const hud = createSlice({
       void (state.street = a.payload),
     voiceSet: (
       state,
-      a: PayloadAction<{ talking: boolean; mode: number; radio: boolean }>
+      a: PayloadAction<{ talking: boolean; mode: number; radio: boolean }>,
     ) => void (state.voice = a.payload),
     identitySet: (
       state,
-      a: PayloadAction<{ serverId: number; name: string } | null>
+      a: PayloadAction<{ serverId: number; name: string } | null>,
     ) => void (state.identity = a.payload),
     jobSet: (state, a: PayloadAction<JobView | null>) =>
       void (state.job = a.payload),
   },
-})
+});
 
 export const {
   settingsSet,
@@ -96,7 +96,7 @@ export const {
   voiceSet,
   identitySet,
   jobSet,
-} = hud.actions
-export const store = configureStore({ reducer: { hud: hud.reducer } })
-export type RootState = ReturnType<typeof store.getState>
-export const useAppSelector = useSelector.withTypes<RootState>()
+} = hud.actions;
+export const store = configureStore({ reducer: { hud: hud.reducer } });
+export type RootState = ReturnType<typeof store.getState>;
+export const useAppSelector = useSelector.withTypes<RootState>();

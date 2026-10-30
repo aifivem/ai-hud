@@ -1,5 +1,5 @@
-import { memo } from "react"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { memo } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBrain,
   faDrumstickBite,
@@ -10,11 +10,11 @@ import {
   faShieldHalved,
   faWalkieTalkie,
   type IconDefinition,
-} from "@fortawesome/free-solid-svg-icons"
-import { useLang } from "../lib/lang"
-import { useAppSelector } from "../store/hud"
-import { clamp, DANGER, IconCircle, Pill, TEXT_SHADOW, Value } from "./parts"
-import { Speedometer } from "./Speedometer"
+} from "@fortawesome/free-solid-svg-icons";
+import { useLang } from "../lib/lang";
+import { useAppSelector } from "../store/hud";
+import { clamp, DANGER, IconCircle, Pill, TEXT_SHADOW, Value } from "./parts";
+import { Speedometer } from "./Speedometer";
 
 /** lumihud status colours (IndicatorBox defaults). */
 const COLOR = {
@@ -23,7 +23,7 @@ const COLOR = {
   hunger: "#ffa754",
   thirst: "#5ef0e6",
   stress: "#b46cff",
-}
+};
 
 /** Status with a horizontal bar (health, armour): icon circle + pill with a thin bar and the value. */
 const BigStatus = memo(function BigStatus({
@@ -32,12 +32,12 @@ const BigStatus = memo(function BigStatus({
   color,
   label,
 }: {
-  icon: IconDefinition
-  value: number
-  color: string
-  label: string
+  icon: IconDefinition;
+  value: number;
+  color: string;
+  label: string;
 }) {
-  const tint = value <= 20 ? DANGER : color
+  const tint = value <= 20 ? DANGER : color;
   return (
     <div className="flex gap-[0.5vh]" aria-label={label}>
       <IconCircle icon={icon} color={tint} />
@@ -54,8 +54,8 @@ const BigStatus = memo(function BigStatus({
         <Value value={value} />
       </Pill>
     </div>
-  )
-})
+  );
+});
 
 /** Status with a small upright bar (needs): icon circle + pill with a short vertical bar and the value. */
 const SmallStatus = memo(function SmallStatus({
@@ -64,12 +64,12 @@ const SmallStatus = memo(function SmallStatus({
   color,
   label,
 }: {
-  icon: IconDefinition
-  value: number
-  color: string
-  label: string
+  icon: IconDefinition;
+  value: number;
+  color: string;
+  label: string;
 }) {
-  const tint = value <= 20 ? DANGER : color
+  const tint = value <= 20 ? DANGER : color;
   return (
     <div className="flex gap-[0.5vh]" aria-label={label}>
       <IconCircle icon={icon} color={tint} />
@@ -86,12 +86,12 @@ const SmallStatus = memo(function SmallStatus({
         <Value value={value} />
       </Pill>
     </div>
-  )
-})
+  );
+});
 
 function Street() {
-  const { street, zone } = useAppSelector((s) => s.hud.street)
-  if (!street && !zone) return null
+  const { street, zone } = useAppSelector((s) => s.hud.street);
+  if (!street && !zone) return null;
   return (
     <div className="flex gap-[0.5vh]">
       <IconCircle
@@ -103,23 +103,23 @@ function Street() {
         <span className="text-[1.2vh] text-white/70 uppercase">{zone}</span>
       </Pill>
     </div>
-  )
+  );
 }
 
 /** Mic fill per range, lumihud style: whisper a third, normal two thirds, shout full. */
 const level = (mode: number) =>
-  Math.min(100, Math.max(15, Math.round((mode / 3) * 100)))
+  Math.min(100, Math.max(15, Math.round((mode / 3) * 100)));
 
 /**
  * lumihud voice box: a round mic that fills up to the voice range (green while talking, a walkie-talkie on the radio)
  * and the range name beside it, "NORMAL RANGE" or "RADIO ON AIR".
  */
 function Voice() {
-  const t = useLang()
-  const voice = useAppSelector((s) => s.hud.voice)
-  const key = `UI_VOICE_MODE_${voice.mode}`
-  const range = t(key) === key ? t("UI_VOICE_MODE_N", voice.mode) : t(key)
-  const live = voice.talking || voice.radio
+  const t = useLang();
+  const voice = useAppSelector((s) => s.hud.voice);
+  const key = `UI_VOICE_MODE_${voice.mode}`;
+  const range = t(key) === key ? t("UI_VOICE_MODE_N", voice.mode) : t(key);
+  const live = voice.talking || voice.radio;
   return (
     <div className="flex items-center gap-[0.5vh]" aria-label={t("UI_VOICE")}>
       <span
@@ -151,12 +151,12 @@ function Voice() {
         </span>
       </span>
     </div>
-  )
+  );
 }
 
 function Needs() {
-  const t = useLang()
-  const { needs, vitals } = useAppSelector((s) => s.hud)
+  const t = useLang();
+  const { needs, vitals } = useAppSelector((s) => s.hud);
   return (
     <div className="flex flex-wrap items-center gap-x-[1vh] gap-y-[0.8vh]">
       <BigStatus
@@ -194,28 +194,28 @@ function Needs() {
         />
       )}
     </div>
-  )
+  );
 }
 
 /** Bottom left, beside the radar: street, voice and the status row stacked like lumihud. */
 function Status() {
-  const show = useAppSelector((s) => s.hud.settings.show)
+  const show = useAppSelector((s) => s.hud.settings.show);
   return (
     <div className="fixed bottom-[3vh] left-[29vh] flex flex-col items-start gap-[1vh]">
       {show.street && <Street />}
       {show.voice && <Voice />}
       {show.needs && <Needs />}
     </div>
-  )
+  );
 }
 
 /** lumihud name box: job chip (green on duty) and grade chip, then "[id] Firstname Lastname". */
 function Identity() {
-  const t = useLang()
-  const { identity, job } = useAppSelector((s) => s.hud)
-  if (!identity && !job) return null
+  const t = useLang();
+  const { identity, job } = useAppSelector((s) => s.hud);
+  if (!identity && !job) return null;
   const chip =
-    "flex h-[1.9vh] items-center rounded-full px-[1vh] text-[1.1vh] leading-none font-bold uppercase"
+    "flex h-[1.9vh] items-center rounded-full px-[1vh] text-[1.1vh] leading-none font-bold uppercase";
   return (
     <div className="flex items-center gap-[0.5vh]">
       {job && (
@@ -248,14 +248,14 @@ function Identity() {
         </span>
       )}
     </div>
-  )
+  );
 }
 
 function Money() {
-  const t = useLang()
-  const money = useAppSelector((s) => s.hud.money)
+  const t = useLang();
+  const money = useAppSelector((s) => s.hud.money);
   const format = (n: number | undefined) =>
-    `$${(n ?? 0).toLocaleString("en-US")}`
+    `$${(n ?? 0).toLocaleString("en-US")}`;
   return (
     <div className={`flex flex-col items-end gap-[0.5vh] ${TEXT_SHADOW}`}>
       <span
@@ -271,23 +271,23 @@ function Money() {
         {format(money.bank)}
       </span>
     </div>
-  )
+  );
 }
 
 /** Top right like lumihud: name and job above the money. */
 function TopRight() {
-  const show = useAppSelector((s) => s.hud.settings.show)
+  const show = useAppSelector((s) => s.hud.settings.show);
   return (
     <div className="fixed top-[3vh] right-[3vh] flex flex-col items-end gap-[1vh]">
       {show.identity && <Identity />}
       {show.money && <Money />}
     </div>
-  )
+  );
 }
 
 /** The HUD over gameplay: nothing else stays on screen (docs/design.md). */
 export function Hud() {
-  const { visible, settings } = useAppSelector((s) => s.hud)
+  const { visible, settings } = useAppSelector((s) => s.hud);
   return (
     <div
       className={`transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
@@ -298,5 +298,5 @@ export function Hud() {
       {(settings.show.money || settings.show.identity) && <TopRight />}
       {settings.show.speedometer && <Speedometer />}
     </div>
-  )
+  );
 }
