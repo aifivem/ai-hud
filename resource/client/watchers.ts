@@ -9,6 +9,7 @@ import {
   every,
   getPlayerData,
   type Job,
+  locationName,
   onCache,
   onPlayerData,
   optionalExport,
@@ -115,10 +116,7 @@ export class Watchers {
   }
 
   private location(): void {
-    const [x = 0, y = 0, z = 0] = GetEntityCoords(cache.ped, false);
-    const [streetHash] = GetStreetNameAtCoord(x, y, z);
-    const street = GetStreetNameFromHashKey(streetHash ?? 0);
-    const zone = GetLabelText(GetNameOfZone(x, y, z));
+    const { street, zone } = locationName();
     const key = `${street}|${zone}`;
     if (key === this.street) return;
     this.street = key;
