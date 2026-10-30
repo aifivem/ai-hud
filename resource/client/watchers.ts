@@ -1,4 +1,5 @@
 import { cache, onCache, onPlayerData, getPlayerData } from "@aicore-fivem/lib/client";
+import { isRecord } from "@aicore-fivem/lib/shared";
 import { EVENTS, type NuiMessage, type Settings, type VehicleInfo } from "common/hud";
 
 /** Vehicle classes without a seatbelt: motorcycles, cycles, boats, helicopters, planes, trains. */
@@ -17,6 +18,8 @@ export class Watchers {
   private talking = false;
   private radio = false;
   private mode = 2;
+  private sentMode = 2;
+  private sentRadio = false;
   private vehicleTimer: ReturnType<typeof setInterval> | null = null;
   private lastVehicle = "";
 
@@ -31,6 +34,9 @@ export class Watchers {
     onPlayerData("money", (money) => send({ action: "money", data: money }));
     const money = getPlayerData("money");
     if (money) send({ action: "money", data: money });
+    // pma-voice keeps the current range in the local player state; later changes come as events.
+    const proximity: unknown = LocalPlayer.state.proximity;
+    if (isRecord(proximity) && typeof proximity.index === "number") this.mode = proximity.index;
     on("pma-voice:setTalkingMode", (mode: unknown) => {
       if (typeof mode === "number") this.mode = mode;
     });
@@ -58,10 +64,13 @@ export class Watchers {
     send({ action: "street", data: { street, zone } });
   }
 
+  /** Sends only when talking, the range or the radio changed (the NUI starts with not talking, range 2, no radio). */
   private voice(): void {
     const talking = NetworkIsPlayerTalking(cache.playerId);
-    if (talking === this.talking && !this.radio) return;
+    if (talking === this.talking && this.mode === this.sentMode && this.radio === this.sentRadio) return;
     this.talking = talking;
+    this.sentMode = this.mode;
+    this.sentRadio = this.radio;
     send({ action: "voice", data: { talking, mode: this.mode, radio: this.radio } });
   }
 

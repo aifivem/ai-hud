@@ -16,7 +16,7 @@ export const hudSchema: PanelSchema = {
         speedUnit: { type: "enum", values: ["kmh", "mph"] },
         show: {
           type: "object",
-          fields: { needs: { type: "bool" }, money: { type: "bool" }, speedometer: { type: "bool" }, street: { type: "bool" }, voice: { type: "bool" } },
+          fields: { needs: { type: "bool" }, money: { type: "bool" }, speedometer: { type: "bool" }, street: { type: "bool" }, voice: { type: "bool" }, identity: { type: "bool" } },
         },
       },
     },
@@ -50,6 +50,7 @@ export const hudSchema: PanelSchema = {
             { widget: "switch", path: "show.speedometer", label: "ADMIN_F_SHOW_SPEEDOMETER" },
             { widget: "switch", path: "show.street", label: "ADMIN_F_SHOW_STREET" },
             { widget: "switch", path: "show.voice", label: "ADMIN_F_SHOW_VOICE", hint: "ADMIN_H_SHOW_VOICE" },
+            { widget: "switch", path: "show.identity", label: "ADMIN_F_SHOW_IDENTITY", hint: "ADMIN_H_SHOW_IDENTITY" },
             {
               widget: "select",
               path: "speedUnit",

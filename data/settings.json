@@ -4,5 +4,5 @@
   "stressRelief": 0.5,
   "emptyDamage": 2,
   "speedUnit": "kmh",
-  "show": { "needs": true, "money": true, "speedometer": true, "street": true, "voice": true }
+  "show": { "needs": true, "money": true, "speedometer": true, "street": true, "voice": true, "identity": true }
 }

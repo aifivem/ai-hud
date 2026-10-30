@@ -15,6 +15,10 @@ export const EVENTS = {
   need: "ai-hud:client:need",
   /** Client -> server: (amount) stress from shooting or speeding; only ever adds. */
   stress: "ai-hud:stress",
+  /** Callback: () -> JobView | null, the job the HUD shows (snapshot when the client starts). */
+  job: "ai-hud:job",
+  /** Server -> owner: (job: JobView | null) the shown job changed (load, job or duty change). */
+  jobSet: "ai-hud:client:job",
 } as const;
 
 export interface Settings {
@@ -26,7 +30,7 @@ export interface Settings {
   /** Health lost every 10 s while hunger or thirst is at 0. */
   emptyDamage: number;
   speedUnit: "kmh" | "mph";
-  show: { needs: boolean; money: boolean; speedometer: boolean; street: boolean; voice: boolean };
+  show: { needs: boolean; money: boolean; speedometer: boolean; street: boolean; voice: boolean; identity: boolean };
 }
 
 export function readSettings(raw: unknown): Settings {
@@ -44,8 +48,24 @@ export function readSettings(raw: unknown): Settings {
       speedometer: bool(show.speedometer, true),
       street: bool(show.street, true),
       voice: bool(show.voice, true),
+      identity: bool(show.identity, true),
     },
   };
+}
+
+/** The job top right: the on-duty job, else the first membership, with ai-core's labels. */
+export interface JobView {
+  label: string;
+  /** Grade label; empty when the job has no such grade. */
+  grade: string;
+  onDuty: boolean;
+}
+
+export function readJob(raw: unknown): JobView | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const j = record(raw);
+  if (typeof j.label !== "string") return null;
+  return { label: j.label, grade: typeof j.grade === "string" ? j.grade : "", onDuty: j.onDuty === true };
 }
 
 export interface Vitals {
@@ -71,4 +91,6 @@ export type NuiMessage =
   | { action: "money"; data: Record<string, number> }
   | { action: "vehicle"; data: VehicleInfo | null }
   | { action: "street"; data: { street: string; zone: string } }
-  | { action: "voice"; data: { talking: boolean; mode: number; radio: boolean } };
+  | { action: "voice"; data: { talking: boolean; mode: number; radio: boolean } }
+  | { action: "identity"; data: { serverId: number; name: string } | null }
+  | { action: "job"; data: JobView | null };

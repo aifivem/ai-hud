@@ -1,6 +1,7 @@
-import { AdminWorld, cache, loadLocaleTexts, onCache, onServerEvent } from "@aicore-fivem/lib/client";
+import { AdminWorld, cache, getPlayerData, loadLocaleTexts, onCache, onServerEvent } from "@aicore-fivem/lib/client";
 import { CORE } from "@aicore-fivem/shared";
 import { DEFAULT_NEEDS, EVENTS, NEEDS, readSettings, type Need, type Needs } from "common/hud";
+import { Identity } from "./identity";
 import { send, Watchers } from "./watchers";
 
 const isNeed = (v: unknown): v is Need => typeof v === "string" && (NEEDS as readonly string[]).includes(v);
@@ -61,10 +62,14 @@ class Hud {
 }
 
 const hud = new Hud();
+const identity = new Identity();
 
 RegisterNuiCallback("ready", (_d: unknown, cb: (r: unknown) => void) => {
   hud.setup();
   send({ action: "needs", data: hud.needs });
+  identity.resend();
+  const money = getPlayerData("money");
+  if (money) send({ action: "money", data: money });
   cb({ ok: true });
 });
 onServerEvent(EVENTS.needs, { args: ([raw]) => (typeof raw === "object" && raw !== null ? [raw as Record<string, unknown>] : null) }, (raw) => hud.setNeeds(raw));
@@ -77,4 +82,6 @@ onCache("weapon", (weapon) => hud.watchWeapon(weapon));
 setInterval(() => hud.updateVisible(), 250);
 setInterval(() => hud.starve(), 10_000);
 
+// Identity seeds ai-core's player data first: the watchers read money from it.
+identity.start();
 new Watchers(() => hud.settings).start();

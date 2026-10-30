@@ -44,7 +44,7 @@ try{
 	}
 
 // ../../../packages/lib/src/client/netEvent.ts
-	const log$2 = createLogger(GetCurrentResourceName());
+	const log$3 = createLogger(GetCurrentResourceName());
 	/**
 	* Whether the net event being handled came from the server (read it before the first `await`). On a client only
 	* events from the server carry a source (65535 in the docs); a local emit by any resource carries none.
@@ -55,17 +55,17 @@ try{
 		onNet(name, (...raw) => {
 			if (!fromServer() || !handler) return;
 			const args = parse ? parse(raw) : [];
-			if (!args) return log$2.warn(`event ${name} from the server had invalid arguments`);
-			Promise.resolve().then(() => handler(...args)).catch((error) => log$2.error(`event ${name} failed`, error));
+			if (!args) return log$3.warn(`event ${name} from the server had invalid arguments`);
+			Promise.resolve().then(() => handler(...args)).catch((error) => log$3.error(`event ${name} failed`, error));
 		});
 	}
 
 // ../../../packages/lib/src/client/callback.ts
-	const resource = GetCurrentResourceName();
-	const log$1 = createLogger(resource);
+	const resource$1 = GetCurrentResourceName();
+	const log$2 = createLogger(resource$1);
 	const pending = /* @__PURE__ */ new Map();
 	let nextId = 0;
-	onNet(responseEvent(resource), (id, ok, result) => {
+	onNet(responseEvent(resource$1), (id, ok, result) => {
 		if (!fromServer()) return;
 		const entry = typeof id === "number" ? pending.get(id) : void 0;
 		if (!entry) return;
@@ -90,7 +90,7 @@ try{
 				reject,
 				timer
 			});
-			emitNet(requestEvent(name), resource, id, ...args);
+			emitNet(requestEvent(name), resource$1, id, ...args);
 		});
 	}
 
@@ -116,10 +116,16 @@ try{
 		activeGangChangedEvent: "ai-core:activeGangChanged",
 		/** (src, charIds: number[]) each time a player's character screen loads; an appearance resource answers with portraits. */
 		characterScreenEvent: "ai-core:characterScreen",
+		/** (resource: string | null) the inventory behind ai-core's inventory layer changed (the bridge drops its item cache). */
+		inventoryChangedEvent: "ai-core:inventoryChanged",
+		/** (src, name: string, status: Record<string, number> | null) a player used an item; status = the needs it gives, from inventories that define them. */
+		itemUsedEvent: "ai-core:itemUsed",
 		clientPlayerLoadedEvent: "ai-core:client:playerLoaded",
 		clientPlayerUnloadedEvent: "ai-core:client:playerUnloaded",
 		/** (charId: number, url: string) a portrait image of a character on the character screen (e.g. `https://nui-img/<txd>/<txd>`). */
 		clientCharacterPortraitEvent: "ai-core:client:characterPortrait",
+		/** (charId: number) ai-appearance holds this character's look: ai-core dresses its scene ped with `ApplyCharacterAppearance`. */
+		clientCharacterLookEvent: "ai-core:client:characterLook",
 		/** (resource: string, id: string) the interaction key was pressed while that resource's prompt was on top. */
 		clientPromptPressedEvent: "ai-core:client:promptPressed",
 		/** (key: keyof PlayerCache, value) a cached value of the local player changed (one watcher in ai-core for every resource). */
@@ -141,9 +147,12 @@ try{
 	const ADMIN = {
 		/** ACE every panel action checks: `add_ace group.admin ai.admin allow`. */
 		ace: "ai.admin",
+		/** Callback: (keybinds: KeybindInfo[] the admin's client knows) -> AdminPanelSnapshot[]. */
 		openCallback: "ai-core:admin:open",
 		applyCallback: "ai-core:admin:apply",
 		closeEvent: "ai-core:admin:close",
+		/** Server -> client: () open the panel (the `aiadmin` command, checked on the server). */
+		showEvent: "ai-core:admin:show",
 		/** Server -> admins with the panel open: (delta: AdminDelta). */
 		deltaEvent: "ai-core:admin:delta",
 		/** Server -> client of a world (`sync: "all"`) file: (file, key | null, value). Prefixed with the resource name. */
@@ -171,6 +180,8 @@ try{
 		data = /* @__PURE__ */ new Map();
 		handlers = /* @__PURE__ */ new Map();
 		resource = GetCurrentResourceName();
+		/** Resolves once the changes since start are applied (or could not be loaded): the data is current from then on. */
+		ready;
 		/** `files`: the world files this client mirrors (each must be in the resource's `files`). */
 		constructor(files) {
 			const log = createLogger(this.resource);
@@ -189,7 +200,7 @@ try{
 				typeof key === "string" && key !== "" ? key : void 0,
 				value
 			] : null }, (file, key, value) => this.put(file, key, value));
-			triggerServerCallback(ADMIN.worldChangesCallback(this.resource)).then((changes) => {
+			this.ready = triggerServerCallback(ADMIN.worldChangesCallback(this.resource)).then((changes) => {
 				if (!isRecord(changes)) return;
 				for (const [file, records] of Object.entries(changes)) {
 					if (!isRecord(records)) continue;
@@ -269,7 +280,13 @@ try{
 	* (measured with 1,000,000 zones): zones sit in a grid of 64 m cells and a check looks only at the player's cell and
 	* the zones the player is in.
 	*/
-	const log = createLogger(GetCurrentResourceName());
+	const log$1 = createLogger(GetCurrentResourceName());
+
+// ../../../packages/lib/src/fivem/exports.ts
+/** Typed access to another resource's exports (types come from CitizenExports in @aicore-fivem/shared). */
+	function resourceExport(resource) {
+		return globalThis.exports[resource];
+	}
 
 // ../../../packages/lib/src/client/menu.ts
 /** Menus and input dialogs this resource asked ai-core for, waiting for the player's answer. */
@@ -349,6 +366,14 @@ try{
 		listen();
 		return values.get(key);
 	}
+	/** Seeds the values (from ai-core's `GetPlayerData` export) when this resource starts after the player loaded. */
+	function seedPlayerData(data) {
+		listen();
+		for (const [key, value] of Object.entries(data)) if (!values.has(key)) values.set(key, value);
+	}
+
+// ../../../packages/lib/src/client/keybind.ts
+	const resource = GetCurrentResourceName();
 
 // ../../../packages/lib/src/fivem/locale.ts
 /** Convar holding the language (`setr ai:locale "en"` in misc.cfg); replicated so clients read it too. */
@@ -393,7 +418,11 @@ try{
 		needs: "ai-hud:client:needs",
 		need: "ai-hud:client:need",
 		/** Client -> server: (amount) stress from shooting or speeding; only ever adds. */
-		stress: "ai-hud:stress"
+		stress: "ai-hud:stress",
+		/** Callback: () -> JobView | null, the job the HUD shows (snapshot when the client starts). */
+		job: "ai-hud:job",
+		/** Server -> owner: (job: JobView | null) the shown job changed (load, job or duty change). */
+		jobSet: "ai-hud:client:job"
 	};
 	function readSettings(raw) {
 		const s = record(raw);
@@ -409,10 +438,25 @@ try{
 				money: bool(show.money, true),
 				speedometer: bool(show.speedometer, true),
 				street: bool(show.street, true),
-				voice: bool(show.voice, true)
+				voice: bool(show.voice, true),
+				identity: bool(show.identity, true)
 			}
 		};
 	}
+	function readJob(raw) {
+		if (typeof raw !== "object" || raw === null) return null;
+		const j = record(raw);
+		if (typeof j.label !== "string") return null;
+		return {
+			label: j.label,
+			grade: typeof j.grade === "string" ? j.grade : "",
+			onDuty: j.onDuty === true
+		};
+	}
+
+// resource/common/resource.ts
+	const ResourceName = GetCurrentResourceName();
+	const ResourceContext = IsDuplicityVersion() ? "server" : "client";
 
 // resource/client/watchers.ts
 /** Vehicle classes without a seatbelt: motorcycles, cycles, boats, helicopters, planes, trains. */
@@ -437,6 +481,8 @@ try{
 		talking = false;
 		radio = false;
 		mode = 2;
+		sentMode = 2;
+		sentRadio = false;
 		vehicleTimer = null;
 		lastVehicle = "";
 		constructor(settings) {
@@ -457,6 +503,8 @@ try{
 				action: "money",
 				data: money
 			});
+			const proximity = LocalPlayer.state.proximity;
+			if (isRecord(proximity) && typeof proximity.index === "number") this.mode = proximity.index;
 			on("pma-voice:setTalkingMode", (mode) => {
 				if (typeof mode === "number") this.mode = mode;
 			});
@@ -493,10 +541,13 @@ try{
 				}
 			});
 		}
+		/** Sends only when talking, the range or the radio changed (the NUI starts with not talking, range 2, no radio). */
 		voice() {
 			const talking = NetworkIsPlayerTalking(cache.playerId);
-			if (talking === this.talking && !this.radio) return;
+			if (talking === this.talking && this.mode === this.sentMode && this.radio === this.sentRadio) return;
 			this.talking = talking;
+			this.sentMode = this.mode;
+			this.sentRadio = this.radio;
 			send({
 				action: "voice",
 				data: {
@@ -538,6 +589,56 @@ try{
 				data: info
 			});
 			if (speed > (this.settings().speedUnit === "mph" ? 100 : 160) && Math.random() < .01) emitNet(EVENTS.stress, 1);
+		}
+	};
+
+// resource/client/identity.ts
+	const log = createLogger(ResourceName);
+	/**
+	* Top right of the HUD: server id and character name from ai-core's player data, the job with its labels from this
+	* resource's server (snapshot at start, then deltas). Each reaches the NUI once and again only when it changes.
+	*/
+	var Identity = class {
+		identity = null;
+		job = null;
+		start() {
+			const data = resourceExport("ai-core").GetPlayerData();
+			if (data) seedPlayerData(data);
+			onPlayerData("character", (character) => this.setCharacter(character));
+			this.setCharacter(getPlayerData("character") ?? null);
+			onServerEvent(EVENTS.jobSet, { args: ([raw]) => [readJob(raw)] }, (job) => this.setJob(job));
+			triggerServerCallback(EVENTS.job).then((raw) => this.setJob(readJob(raw)), (error) => log.error("job snapshot failed", error));
+		}
+		/** The NUI (re)loaded: it gets the current values. */
+		resend() {
+			send({
+				action: "identity",
+				data: this.identity
+			});
+			send({
+				action: "job",
+				data: this.job
+			});
+		}
+		setCharacter(character) {
+			const next = character ? {
+				serverId: cache.serverId,
+				name: `${character.firstname} ${character.lastname}`
+			} : null;
+			if (next?.name === this.identity?.name && next?.serverId === this.identity?.serverId) return;
+			this.identity = next;
+			send({
+				action: "identity",
+				data: next
+			});
+		}
+		setJob(job) {
+			if (JSON.stringify(job) === JSON.stringify(this.job)) return;
+			this.job = job;
+			send({
+				action: "job",
+				data: job
+			});
 		}
 	};
 
@@ -606,11 +707,18 @@ try{
 		}
 	};
 	const hud = new Hud();
+	const identity = new Identity();
 	RegisterNuiCallback("ready", (_d, cb) => {
 		hud.setup();
 		send({
 			action: "needs",
 			data: hud.needs
+		});
+		identity.resend();
+		const money = getPlayerData("money");
+		if (money) send({
+			action: "money",
+			data: money
 		});
 		cb({ ok: true });
 	});
@@ -623,6 +731,7 @@ try{
 	onCache("weapon", (weapon) => hud.watchWeapon(weapon));
 	setInterval(() => hud.updateVisible(), 250);
 	setInterval(() => hud.starve(), 1e4);
+	identity.start();
 	new Watchers(() => hud.settings).start();
 
 })();

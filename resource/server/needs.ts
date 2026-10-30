@@ -68,8 +68,8 @@ on(CORE.playerUnloadedEvent, (source: number) => needs.drop(source));
 on("playerDropped", () => needs.drop(Number(globalThis.source)));
 setInterval(() => needs.tick(), 60_000);
 
-// Items with hunger / thirst / stress values (ai-inventory's use event).
-on("ai-inventory:usedItem", (source: number, _name: string, _slot: number, _metadata: unknown, status: unknown) => {
+// Items with hunger / thirst / stress values (ai-core's item use event).
+on(CORE.itemUsedEvent, (source: number, _name: string, status: unknown) => {
   if (typeof status !== "object" || status === null) return;
   for (const [need, value] of Object.entries(status)) if (isNeed(need) && typeof value === "number") needs.add(source, need, value);
 });
