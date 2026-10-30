@@ -37,15 +37,24 @@ export const MOCK_JOB = {
 export const MOCK_HINTS = vehicle
   ? [
       { id: "belt", key: "K", label: "Seatbelt", icon: "user-shield" },
-      { id: "engine", key: "M", label: "Engine on / off", icon: "power-off" },
-      { id: "lock", key: "U", label: "Lock / unlock", icon: "lock" },
-      { id: "inv", key: "F1", label: "Inventory", icon: "box-open" },
+      { id: "engine", key: "M", label: "Engine", icon: "power-off" },
+      { id: "lock", key: "U", label: "Lock", icon: "lock" },
+      { id: "inv", key: "F2", label: "Inventory", icon: "box-open" },
     ]
   : [
       { id: "hotbar", key: "TAB", label: "Quick slots", icon: "table-cells" },
-      { id: "inv", key: "F1", label: "Inventory", icon: "box-open" },
-      { id: "radial", key: "F3", label: "Radial menu", icon: "circle-nodes" },
+      { id: "inv", key: "F2", label: "Inventory", icon: "box-open" },
+      { id: "radial", key: "F3", label: "Menu", icon: "circle-nodes" },
       { id: "point", key: "B", label: "Point" },
       { id: "hands", key: "X", label: "Hands up" },
-      { id: "lock", key: "U", label: "Lock / unlock", icon: "lock" },
+      { id: "lock", key: "U", label: "Lock", icon: "lock" },
     ];
+
+/** The minimap shows in a vehicle (`?vehicle=1`) or with `?map=1`. */
+export const MOCK_RADAR = vehicle || params.get("map") !== null;
+
+/** `?weapon=1`: a pistol in hand. */
+export const MOCK_WEAPON =
+  params.get("weapon") !== null
+    ? { label: "Pistol", clip: 12, total: 48, image: undefined }
+    : null;

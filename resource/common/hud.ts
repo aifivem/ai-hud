@@ -135,12 +135,24 @@ export interface VehicleInfo {
 }
 
 /** Client -> NUI messages; each carries only what changed. */
+/** The weapon box: label and picture from the inventory, rounds from the game (null for weapons without a clip). */
+export interface WeaponInfo {
+  label: string;
+  image?: string;
+  clip: number | null;
+  total: number | null;
+}
+
 export type NuiMessage =
   | {
       action: "setup";
       data: { texts: Record<string, string>; settings: Settings };
     }
   | { action: "visible"; data: boolean }
+  /** The minimap shows: the status group sits beside it, else at the left edge. */
+  | { action: "radar"; data: boolean }
+  /** The held weapon, null when none. */
+  | { action: "weapon"; data: WeaponInfo | null }
   | { action: "keyHints"; data: KeyHintView[] }
   | { action: "needs"; data: Partial<Needs> }
   | { action: "vitals"; data: Vitals }

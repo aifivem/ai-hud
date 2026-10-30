@@ -14,5 +14,5 @@
     "identity": true
   },
   "keyHints": true,
-  "minimap": "always"
+  "minimap": "vehicle"
 }

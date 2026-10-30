@@ -20,6 +20,7 @@ import {
 import { Identity } from "./identity";
 import { effective, openSettings, radar, registerHudExports } from "./prefs";
 import { send, Watchers } from "./watchers";
+import { WeaponWatch } from "./weapon";
 
 const core = resourceExport("ai-core");
 const isHint = (v: unknown): v is KeyHintView =>
@@ -57,6 +58,7 @@ class Hud {
       data: { texts: loadLocaleTexts(), settings: effective(this.settings) },
     });
     radar.update(this.visible, this.settings);
+    send({ action: "radar", data: radar.visible });
   }
 
   setNeeds(raw: Record<string, unknown>): void {
@@ -80,7 +82,8 @@ class Hud {
       this.uiAllows &&
       !IsPauseMenuActive() &&
       !IsScreenFadedOut();
-    radar.update(next, this.settings);
+    if (radar.update(next, this.settings))
+      send({ action: "radar", data: radar.visible });
     if (next === this.visible) return;
     this.visible = next;
     send({ action: "visible", data: next });
@@ -169,3 +172,4 @@ setInterval(() => hud.starve(), 10_000);
 // Identity seeds ai-core's player data first: the watchers read money from it.
 identity.start();
 new Watchers(() => hud.settings).start();
+new WeaponWatch().start();

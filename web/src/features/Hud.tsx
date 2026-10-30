@@ -15,6 +15,7 @@ import { useLang } from "../lib/lang";
 import { useAppSelector } from "../store/hud";
 import { clamp, DANGER, IconCircle, Pill, TEXT_SHADOW, Value } from "./parts";
 import { KeyHints } from "./KeyHints";
+import { Weapon } from "./Weapon";
 import { Speedometer } from "./Speedometer";
 
 /** lumihud status colours (IndicatorBox defaults). */
@@ -198,11 +199,15 @@ function Needs() {
   );
 }
 
-/** Bottom left, beside the radar: street, voice and the status row stacked like lumihud. */
+/** Bottom left, beside the radar (at the left edge while it is hidden): street, voice and the status row like lumihud. */
 function Status() {
   const show = useAppSelector((s) => s.hud.settings.show);
+  const radar = useAppSelector((s) => s.hud.radar);
   return (
-    <div className="fixed bottom-[3vh] left-[29vh] flex flex-col items-start gap-[1vh]">
+    <div
+      className="fixed bottom-[3vh] left-[3vh] flex flex-col items-start gap-[1vh] transition-transform duration-300 ease-out"
+      style={{ transform: radar ? "translateX(26vh)" : "translateX(0)" }}
+    >
       {show.street && <Street />}
       {show.voice && <Voice />}
       {show.needs && <Needs />}
@@ -275,13 +280,14 @@ function Money() {
   );
 }
 
-/** Top right like lumihud: name and job above the money. */
+/** Top right like lumihud: name and job above the money, the held weapon under it. */
 function TopRight() {
   const show = useAppSelector((s) => s.hud.settings.show);
   return (
     <div className="fixed top-[3vh] right-[3vh] flex flex-col items-end gap-[1vh]">
       {show.identity && <Identity />}
       {show.money && <Money />}
+      <Weapon />
     </div>
   );
 }

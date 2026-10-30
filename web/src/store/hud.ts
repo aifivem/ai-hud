@@ -11,6 +11,7 @@ import type {
   Settings,
   VehicleInfo,
   Vitals,
+  WeaponInfo,
 } from "../../../resource/common/hud";
 
 interface HudState {
@@ -25,6 +26,9 @@ interface HudState {
   identity: { serverId: number; name: string } | null;
   job: JobView | null;
   keyHints: KeyHintView[];
+  /** The minimap shows (the status group sits beside it). */
+  radar: boolean;
+  weapon: WeaponInfo | null;
 }
 
 const initialState: HudState = {
@@ -56,6 +60,8 @@ const initialState: HudState = {
   identity: null,
   job: null,
   keyHints: [],
+  radar: true,
+  weapon: null,
 };
 
 /** What the HUD draws; every message from the client carries only what changed. */
@@ -89,6 +95,10 @@ const hud = createSlice({
       void (state.job = a.payload),
     keyHintsSet: (state, a: PayloadAction<KeyHintView[]>) =>
       void (state.keyHints = a.payload),
+    radarSet: (state, a: PayloadAction<boolean>) =>
+      void (state.radar = a.payload),
+    weaponSet: (state, a: PayloadAction<WeaponInfo | null>) =>
+      void (state.weapon = a.payload),
   },
 });
 
@@ -104,6 +114,8 @@ export const {
   identitySet,
   jobSet,
   keyHintsSet,
+  radarSet,
+  weaponSet,
 } = hud.actions;
 export const store = configureStore({ reducer: { hud: hud.reducer } });
 export type RootState = ReturnType<typeof store.getState>;

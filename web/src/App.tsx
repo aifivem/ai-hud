@@ -3,6 +3,8 @@ import { fetchNui, useNuiEvent } from "fivem-nui-react";
 import type { NuiMessage } from "../../resource/common/hud";
 import {
   MOCK_HINTS,
+  MOCK_RADAR,
+  MOCK_WEAPON,
   MOCK_IDENTITY,
   MOCK_JOB,
   MOCK_MONEY,
@@ -19,6 +21,8 @@ import {
   identitySet,
   jobSet,
   keyHintsSet,
+  radarSet,
+  weaponSet,
   moneySet,
   needsSet,
   settingsSet,
@@ -50,6 +54,8 @@ const onVoice = (d: Data<"voice">) => store.dispatch(voiceSet(d));
 const onIdentity = (d: Data<"identity">) => store.dispatch(identitySet(d));
 const onJob = (d: Data<"job">) => store.dispatch(jobSet(d));
 const onKeyHints = (d: Data<"keyHints">) => store.dispatch(keyHintsSet(d));
+const onRadar = (d: Data<"radar">) => store.dispatch(radarSet(d));
+const onWeapon = (d: Data<"weapon">) => store.dispatch(weaponSet(d));
 
 // Stable mock references: a new object per render would fire the browser mock again.
 const SETUP = { mockData: MOCK_SETUP, mockDelay: 50 };
@@ -63,6 +69,8 @@ const VOICE = { mockData: MOCK_VOICE, mockDelay: 50 };
 const IDENTITY = { mockData: MOCK_IDENTITY, mockDelay: 50 };
 const JOB = { mockData: MOCK_JOB, mockDelay: 50 };
 const HINTS = { mockData: MOCK_HINTS, mockDelay: 50 };
+const RADAR = { mockData: MOCK_RADAR, mockDelay: 50 };
+const WEAPON = { mockData: MOCK_WEAPON, mockDelay: 50 };
 
 export function App() {
   useNuiEvent("setup", onSetup, SETUP);
@@ -76,6 +84,8 @@ export function App() {
   useNuiEvent("identity", onIdentity, IDENTITY);
   useNuiEvent("job", onJob, JOB);
   useNuiEvent("keyHints", onKeyHints, HINTS);
+  useNuiEvent("radar", onRadar, RADAR);
+  useNuiEvent("weapon", onWeapon, WEAPON);
   useEffect(
     () => void fetchNui("ready", undefined, { mockData: { ok: true } }),
     [],

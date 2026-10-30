@@ -50,6 +50,7 @@ export function effective(settings: Settings): Settings {
 class Radar {
   adminAlways = false;
   private shown: boolean | null = null;
+  private flipped = false;
   private readonly scaleform = RequestScaleformMovie("minimap");
   private readonly bars = new TickLoop(() => {
     BeginScaleformMovieMethod(this.scaleform, "SETUP_HEALTH_ARMOUR");
@@ -57,7 +58,8 @@ class Radar {
     EndScaleformMovieMethod();
   });
 
-  update(hudVisible: boolean, settings: Settings): void {
+  /** Applies the wanted state; returns true when it changed (the NUI moves the status group). */
+  update(hudVisible: boolean, settings: Settings): boolean {
     const show =
       hudVisible &&
       (settings.minimap === "always" ||
@@ -65,14 +67,20 @@ class Radar {
         cache.vehicle !== false);
     // Always applied: other code (the character screen, a spawn) switches the radar too.
     DisplayRadar(show);
-    if (show === this.shown) return;
+    if (show === this.shown) return false;
     this.shown = show;
     this.bars.set(show);
-    // The minimap often stays empty after DisplayRadar(true) until the big map was shown once: flip it for a moment.
-    if (show) {
-      SetRadarBigmapEnabled(true, false);
-      setTimeout(() => SetRadarBigmapEnabled(false, false), 50);
+    // The minimap stays empty the first time it shows after loading until the big map was shown once.
+    if (show && !this.flipped) {
+      this.flipped = true;
+      SetBigmapActive(true, false);
+      setTimeout(() => SetBigmapActive(false, false), 200);
     }
+    return true;
+  }
+
+  get visible(): boolean {
+    return this.shown === true;
   }
 }
 
