@@ -1,9 +1,5 @@
-import {
-  cache,
-  onCache,
-  onPlayerData,
-  getPlayerData,
-} from "@aicore-fivem/lib/client";
+import { SEATBELT_EVENT } from "@aicore-fivem/shared";
+import { cache, EntityState, getPlayerData, onCache, onPlayerData, optionalExport, PlayerState, stateNumber } from "@aicore-fivem/lib/client";
 import { isRecord } from "@aicore-fivem/lib/shared";
 import {
   EVENTS,
@@ -11,6 +7,12 @@ import {
   type Settings,
   type VehicleInfo,
 } from "common/hud";
+
+const fuelState = new EntityState("fuel", stateNumber);
+/** pma-voice keeps the current range in the player state (`proximity.index`). */
+const voiceRange = new PlayerState("proximity", (v) => (isRecord(v) && typeof v.index === "number" ? v.index : undefined));
+let seatbelt: boolean | null = optionalExport("ai-smallresources")?.GetSeatbelt() ?? null;
+on(SEATBELT_EVENT, (worn: unknown) => (seatbelt = typeof worn === "boolean" ? worn : null));
 
 /** Vehicle classes without a seatbelt: motorcycles, cycles, boats, helicopters, planes, trains. */
 const NO_BELT = new Set([8, 13, 14, 15, 16, 21]);
@@ -45,9 +47,8 @@ export class Watchers {
     const money = getPlayerData("money");
     if (money) send({ action: "money", data: money });
     // pma-voice keeps the current range in the local player state; later changes come as events.
-    const proximity: unknown = LocalPlayer.state.proximity;
-    if (isRecord(proximity) && typeof proximity.index === "number")
-      this.mode = proximity.index;
+    const index = voiceRange.get(cache.serverId);
+    if (index !== undefined) this.mode = index;
     on("pma-voice:setTalkingMode", (mode: unknown) => {
       if (typeof mode === "number") this.mode = mode;
     });
@@ -114,15 +115,8 @@ export class Watchers {
     const speed = Math.round(
       this.settings().speedUnit === "mph" ? mps * 2.236936 : mps * 3.6,
     );
-    const state: unknown = Entity(vehicle).state.fuel;
-    const fuel = Math.round(
-      typeof state === "number" ? state : GetVehicleFuelLevel(vehicle),
-    );
-    const worn: unknown = LocalPlayer.state.seatbelt;
-    const belt =
-      typeof worn !== "boolean" || NO_BELT.has(GetVehicleClass(vehicle))
-        ? null
-        : worn;
+    const fuel = Math.round(fuelState.get(vehicle) ?? GetVehicleFuelLevel(vehicle));
+    const belt = seatbelt === null || NO_BELT.has(GetVehicleClass(vehicle)) ? null : seatbelt;
     const info: VehicleInfo = {
       speed,
       fuel,
