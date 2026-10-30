@@ -23,7 +23,7 @@ class JobLabels {
     const pick = jobs.find((j) => j.job === duty) ?? jobs[0];
     if (!pick) return null;
     // Definitions are read only here: the shown job changes rarely and only on load, job or duty changes.
-    const definition = core.GetJobDefinitions()[pick.job];
+    const definition = core.GetJobDefinition(pick.job);
     return {
       label: definition?.label ?? pick.job,
       grade: definition?.grades[pick.grade]?.label ?? "",

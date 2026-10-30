@@ -1133,8 +1133,9 @@ var ScheduledJob = class {
 	get front() {
 		return this.dues[this.head] ?? 0;
 	}
+	compactAt = 64;
 	push(job, due) {
-		this.count > this.mask && this.grow();
+		this.count >= this.compactAt && this.compact(), this.count > this.mask && this.grow();
 		let i = this.head + this.count & this.mask;
 		this.jobs[i] = job, this.gens[i] = job.gen, this.dues[i] = due, this.count++;
 	}
@@ -1147,6 +1148,17 @@ var ScheduledJob = class {
 			let next = due + this.interval;
 			next <= now && (next = now + this.interval), this.push(job, next), job.call();
 		}
+	}
+	compact() {
+		let kept = 0;
+		for (let n = 0; n < this.count; n++) {
+			let i = this.head + n & this.mask, job = this.jobs[i];
+			if (!job || job.gen !== this.gens[i]) continue;
+			let k = this.head + kept & this.mask;
+			this.jobs[k] = job, this.gens[k] = this.gens[i] ?? 0, this.dues[k] = this.dues[i] ?? 0, kept++;
+		}
+		for (let n = kept; n < this.count; n++) this.jobs[this.head + n & this.mask] = void 0;
+		this.count = kept, this.compactAt = Math.max(64, kept * 2);
 	}
 	grow() {
 		let size = (this.mask + 1) * 2, jobs = Array(size), gens = Array(size).fill(0), dues = Array(size).fill(0);
@@ -1528,7 +1540,7 @@ const core = resourceExport("ai-core"), labels = new class {
 		if (!jobs) return null;
 		let duty = core.GetDutyJob(source), pick = jobs.find((j) => j.job === duty) ?? jobs[0];
 		if (!pick) return null;
-		let definition = core.GetJobDefinitions()[pick.job];
+		let definition = core.GetJobDefinition(pick.job);
 		return {
 			label: definition?.label ?? pick.job,
 			grade: definition?.grades[pick.grade]?.label ?? "",
