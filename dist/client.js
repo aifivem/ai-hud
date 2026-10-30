@@ -120,6 +120,8 @@ try{
 		inventoryChangedEvent: "ai-core:inventoryChanged",
 		/** (src, name: string, status: Record<string, number> | null) a player used an item; status = the needs it gives, from inventories that define them. */
 		itemUsedEvent: "ai-core:itemUsed",
+		/** (src, killer: number | null, weaponHash: number) a player with a loaded character died; fired from FXServer's `onPedDeath` (needs `PED_DEATH_STATE_KEY`). */
+		playerDiedEvent: "ai-core:playerDied",
 		clientPlayerLoadedEvent: "ai-core:client:playerLoaded",
 		clientPlayerUnloadedEvent: "ai-core:client:playerUnloaded",
 		/** (charId: number, url: string) a portrait image of a character on the character screen (e.g. `https://nui-img/<txd>/<txd>`). */
@@ -602,8 +604,12 @@ try{
 		identity = null;
 		job = null;
 		start() {
-			const data = resourceExport("ai-core").GetPlayerData();
-			if (data) seedPlayerData(data);
+			try {
+				const data = resourceExport("ai-core").GetPlayerData();
+				if (data) seedPlayerData(data);
+			} catch (error) {
+				log.warn("ai-core's player data is not ready yet", error);
+			}
 			onPlayerData("character", (character) => this.setCharacter(character));
 			this.setCharacter(getPlayerData("character") ?? null);
 			onServerEvent(EVENTS.jobSet, { args: ([raw]) => [readJob(raw)] }, (job) => this.setJob(job));

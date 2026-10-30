@@ -16,9 +16,14 @@ export class Identity {
   private job: JobView | null = null;
 
   start(): void {
-    // After a restart of this resource ai-core does not push again: start from its current snapshot.
-    const data = resourceExport("ai-core").GetPlayerData();
-    if (data) seedPlayerData(data);
+    // After a restart of this resource ai-core does not push again: start from its current snapshot. When ai-core
+    // restarts too (its client may not have registered the export yet) its own push on load fills the HUD instead.
+    try {
+      const data = resourceExport("ai-core").GetPlayerData();
+      if (data) seedPlayerData(data);
+    } catch (error) {
+      log.warn("ai-core's player data is not ready yet", error);
+    }
     onPlayerData("character", (character) => this.setCharacter(character));
     this.setCharacter(getPlayerData("character") ?? null);
     onServerEvent(EVENTS.jobSet, { args: ([raw]) => [readJob(raw)] }, (job) => this.setJob(job));
