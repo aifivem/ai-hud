@@ -2,7 +2,10 @@ import type { ReactNode } from "react";
 import { faGasPump, faUserSlash } from "@fortawesome/free-solid-svg-icons";
 import { useLang } from "../lib/lang";
 import { useAppSelector } from "../store/hud";
-import { DANGER, IconCircle, TEXT_SHADOW } from "./parts";
+import { DANGER, IconCircle } from "./parts";
+
+/** lumihud `--filterShadow`, only on the arcs and the digits (a shadow under the dark boxes smears them). */
+const SHADOW = "[filter:drop-shadow(0.15vh_0.1vh_0_rgba(0,0,0,0.75))]";
 
 /** Circumference of the r=48 gauge circle in its 100-unit viewBox. */
 const C = 2 * Math.PI * 48;
@@ -97,10 +100,10 @@ export function Speedometer() {
   const lowFuel = vehicle.fuel < 15;
   return (
     <div className="fixed right-[3vh] bottom-[3vh] size-[22vh]">
-      <div className="absolute inset-[0.5vh] [filter:drop-shadow(0.15vh_0.1vh_0_rgba(0,0,0,0.75))]">
+      <div className="absolute inset-[0.5vh]">
         <svg
           viewBox="0 0 100 100"
-          className="absolute inset-0 size-full overflow-visible"
+          className={`absolute inset-0 size-full overflow-visible ${SHADOW}`}
         >
           <HalfArc side="left" value={vehicle.rpm} color="var(--green)" />
           <HalfArc
@@ -122,13 +125,15 @@ export function Speedometer() {
             />
           ))}
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-[0.2vh]">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pt-[0.2vh]">
           <span className="flex gap-[0.4vh]" aria-label={t("UI_GEAR")}>
             {numeric && vehicle.gear > 1 && <Gear>{vehicle.gear - 1}</Gear>}
             <Gear active>{gear}</Gear>
             {numeric && <Gear>{vehicle.gear + 1}</Gear>}
           </span>
-          <span className="flex text-[5.7vh] leading-[1.15] font-normal tabular-nums">
+          <span
+            className={`flex text-[5.7vh] leading-normal font-normal tabular-nums ${SHADOW}`}
+          >
             {digits
               .padStart(3, "0")
               .split("")
@@ -143,18 +148,18 @@ export function Speedometer() {
                 </span>
               ))}
           </span>
-          <span className="flex h-[2.5vh] items-center rounded-[0.3vh] bg-tgi-dark px-[0.6vh] text-[1.2vh] uppercase">
+          <span className="flex h-[2.5vh] items-center rounded-[0.3vh] bg-tgi-dark px-[0.4vh] text-[1.2vh] uppercase">
             {unit === "mph" ? t("UI_MPH") : t("UI_KMH")}
           </span>
         </div>
       </div>
+      {/* The belt sits on the same column as the fuel icon (lumihud mini icons: top and bottom right). */}
       {vehicle.belt === false && (
-        <span className="absolute top-0 right-0 flex flex-col items-center gap-[0.4vh]">
-          <span
-            className={`text-[1.2vh] font-semibold text-danger uppercase ${TEXT_SHADOW}`}
-          >
-            {t("UI_BELT")}
-          </span>
+        <span
+          className="absolute top-0 right-[1.5vh]"
+          aria-label={t("UI_BELT")}
+          title={t("UI_BELT")}
+        >
           <IconCircle
             icon={faUserSlash}
             color={DANGER}
@@ -162,7 +167,10 @@ export function Speedometer() {
           />
         </span>
       )}
-      <span className="absolute right-0 bottom-0" aria-label={t("UI_FUEL")}>
+      <span
+        className="absolute right-[1.5vh] bottom-0"
+        aria-label={t("UI_FUEL")}
+      >
         <IconCircle
           icon={faGasPump}
           color={lowFuel ? DANGER : "#ffffff"}

@@ -61,47 +61,57 @@ class Radar {
     const show =
       hudVisible &&
       (settings.minimap === "always" ||
-        prefs.value.minimapAlways ||
         this.adminAlways ||
         cache.vehicle !== false);
+    // Always applied: other code (the character screen, a spawn) switches the radar too.
+    DisplayRadar(show);
     if (show === this.shown) return;
     this.shown = show;
-    DisplayRadar(show);
     this.bars.set(show);
+    // The minimap often stays empty after DisplayRadar(true) until the big map was shown once: flip it for a moment.
+    if (show) {
+      SetRadarBigmapEnabled(true, false);
+      setTimeout(() => SetRadarBigmapEnabled(false, false), 50);
+    }
   }
 }
 
 export const radar = new Radar();
 
 const ROWS = [
-  ["needs", "HUD_P_NEEDS"],
-  ["money", "HUD_P_MONEY"],
-  ["speedometer", "HUD_P_SPEEDOMETER"],
-  ["street", "HUD_P_STREET"],
-  ["voice", "HUD_P_VOICE"],
-  ["identity", "HUD_P_IDENTITY"],
-  ["keyHints", "HUD_P_KEYHINTS"],
-  ["minimapAlways", "HUD_P_MINIMAP"],
-] as const satisfies ReadonlyArray<readonly [keyof Omit<Prefs, "v">, string]>;
+  ["needs", "HUD_P_NEEDS", "utensils"],
+  ["money", "HUD_P_MONEY", "wallet"],
+  ["speedometer", "HUD_P_SPEEDOMETER", "gauge"],
+  ["street", "HUD_P_STREET", "road"],
+  ["voice", "HUD_P_VOICE", "microphone"],
+  ["identity", "HUD_P_IDENTITY", "id-card"],
+  ["keyHints", "HUD_P_KEYHINTS", "keyboard"],
+] as const satisfies ReadonlyArray<
+  readonly [keyof Omit<Prefs, "v">, string, string]
+>;
 
-/** /hud: switches for what this player sees; each pick flips one and the menu opens again until it is closed. */
+/** /hud: one switch row per HUD part; each flip applies at once and the menu stays open until it is closed. */
 export async function openSettings(changed: () => void): Promise<void> {
-  for (;;) {
-    const picked = await menu({
+  await menu(
+    {
       title: Locale("HUD_SETTINGS"),
-      items: ROWS.map(([key, label]) => ({
+      items: ROWS.map(([key, label, icon]) => ({
         id: key,
         label: Locale(label),
-        icon: prefs.value[key] ? "check" : "xmark",
-        description: Locale(prefs.value[key] ? "HUD_ON" : "HUD_OFF"),
+        icon,
+        checked: prefs.value[key],
       })),
-    });
-    const row = ROWS.find(([key]) => key === picked);
-    if (!row) return;
-    prefs.value = { ...prefs.value, [row[0]]: !prefs.value[row[0]] };
-    SetResourceKvp(KVP, JSON.stringify(prefs.value));
-    changed();
-  }
+    },
+    {
+      onToggle: (id, checked) => {
+        const row = ROWS.find(([key]) => key === id);
+        if (!row) return;
+        prefs.value = { ...prefs.value, [row[0]]: checked };
+        SetResourceKvp(KVP, JSON.stringify(prefs.value));
+        changed();
+      },
+    },
+  );
 }
 
 export function registerHudExports(

@@ -36,16 +36,16 @@ export const MOCK_JOB = {
 /** Key hints on foot (in a vehicle with `?vehicle=1`). */
 export const MOCK_HINTS = vehicle
   ? [
-      { id: "belt", key: "K", label: "Seatbelt" },
-      { id: "engine", key: "M", label: "Engine on / off" },
-      { id: "lock", key: "U", label: "Lock / unlock" },
-      { id: "inv", key: "F1", label: "Inventory" },
+      { id: "belt", key: "K", label: "Seatbelt", icon: "user-shield" },
+      { id: "engine", key: "M", label: "Engine on / off", icon: "power-off" },
+      { id: "lock", key: "U", label: "Lock / unlock", icon: "lock" },
+      { id: "inv", key: "F1", label: "Inventory", icon: "box-open" },
     ]
   : [
-      { id: "hotbar", key: "TAB", label: "Quick slots" },
-      { id: "inv", key: "F1", label: "Inventory" },
-      { id: "radial", key: "F3", label: "Radial menu" },
+      { id: "hotbar", key: "TAB", label: "Quick slots", icon: "table-cells" },
+      { id: "inv", key: "F1", label: "Inventory", icon: "box-open" },
+      { id: "radial", key: "F3", label: "Radial menu", icon: "circle-nodes" },
       { id: "point", key: "B", label: "Point" },
       { id: "hands", key: "X", label: "Hands up" },
-      { id: "lock", key: "U", label: "Lock / unlock" },
+      { id: "lock", key: "U", label: "Lock / unlock", icon: "lock" },
     ];

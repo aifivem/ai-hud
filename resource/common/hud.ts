@@ -13,8 +13,6 @@ export interface Prefs {
   voice: boolean;
   identity: boolean;
   keyHints: boolean;
-  /** Minimap on foot even when the panel says "only in a vehicle". */
-  minimapAlways: boolean;
 }
 
 export const DEFAULT_PREFS: Prefs = {
@@ -26,7 +24,6 @@ export const DEFAULT_PREFS: Prefs = {
   voice: true,
   identity: true,
   keyHints: true,
-  minimapAlways: false,
 };
 
 export function readPrefs(raw: unknown): Prefs {
