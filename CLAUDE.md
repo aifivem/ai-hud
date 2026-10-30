@@ -1,6 +1,6 @@
 # ai-hud
 
-The HUD (lumihud-style status pills, money, speedometer, street, voice) and the character's needs: hunger, thirst, stress. Depends on ai-core (character metadata, money, admin panel), reads pma-voice state when it runs, takes item effects from ai-core's item use event. Research and decisions: `docs/research/ai-hud.md`.
+The HUD (lumihud-style status pills, money, speedometer, street, voice) and the character's needs: hunger, thirst, stress. Depends on ai-core (character metadata, money, admin panel), reads pma-voice state when it runs, takes item effects from ai-core's item use event.
 
 ## Decisions
 
