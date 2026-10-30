@@ -6,8 +6,10 @@ import {
   loadLocaleTexts,
   onCache,
   onServerEvent,
+  onShot,
   resourceExport,
 } from "@aicore-fivem/lib/client";
+import { isRecord, readFinite } from "@aicore-fivem/lib/shared";
 import { CORE, KEY_HINTS, type KeyHintView } from "@aicore-fivem/shared";
 import {
   DEFAULT_NEEDS,
@@ -16,10 +18,11 @@ import {
   readSettings,
   type Need,
   type Needs,
+  type Settings,
 } from "common/hud";
 import { Identity } from "./identity";
 import { effective, openSettings, radar, registerHudExports } from "./prefs";
-import { send, Watchers } from "./watchers";
+import { addStress, send, Watchers } from "./watchers";
 import { WeaponWatch } from "./weapon";
 
 const core = resourceExport("ai-core");
@@ -39,17 +42,17 @@ const isNeed = (v: unknown): v is Need =>
  */
 class Hud {
   private readonly world = new AdminWorld(["settings"]);
-  settings = readSettings(this.world.get("settings"));
+  private readonly view = this.world.view("settings", readSettings);
   readonly needs: Needs = { ...DEFAULT_NEEDS };
   loaded = false;
   private visible = false;
-  private shootTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
-    this.world.onChange("settings", () => {
-      this.settings = readSettings(this.world.get("settings"));
-      this.setup();
-    });
+    this.world.onChange("settings", () => this.setup());
+  }
+
+  get settings(): Settings {
+    return this.view.value;
   }
 
   setup(): void {
@@ -104,18 +107,6 @@ class Hud {
         Math.max(0, GetEntityHealth(ped) - this.settings.emptyDamage),
       );
   }
-
-  /** Shooting stresses; checked once a second only while armed. */
-  watchWeapon(weapon: number | false): void {
-    if (this.shootTimer) clearInterval(this.shootTimer);
-    this.shootTimer =
-      weapon === false
-        ? null
-        : setInterval(
-            () => IsPedShooting(cache.ped) && emitNet(EVENTS.stress, 1),
-            1000,
-          );
-  }
 }
 
 const hud = new Hud();
@@ -133,10 +124,7 @@ RegisterNuiCallback("ready", (_d: unknown, cb: (r: unknown) => void) => {
 onServerEvent(
   EVENTS.needs,
   {
-    args: ([raw]) =>
-      typeof raw === "object" && raw !== null
-        ? [raw as Record<string, unknown>]
-        : null,
+    args: ([raw]) => (isRecord(raw) ? [raw] : null),
   },
   (raw) => hud.setNeeds(raw),
 );
@@ -144,7 +132,9 @@ onServerEvent(
   EVENTS.need,
   {
     args: ([need, value]) =>
-      isNeed(need) && typeof value === "number" ? [need, value] : null,
+      isNeed(need) && readFinite(value) !== null
+        ? [need, value as number]
+        : null,
   },
   (need, value) => hud.setNeed(need, value),
 );
@@ -152,7 +142,8 @@ on(CORE.clientPlayerUnloadedEvent, () => {
   hud.loaded = false;
   hud.updateVisible();
 });
-onCache("weapon", (weapon) => hud.watchWeapon(weapon));
+// Shooting stresses (lib `onShot`: checked every frame only while armed).
+onShot(() => addStress(hud.settings.stressShot));
 onCache("vehicle", () => hud.updateVisible());
 // ai-core's key hints: the list for the player's situation, sent again whenever it changes.
 on(KEY_HINTS.changedEvent, (list: unknown) => {

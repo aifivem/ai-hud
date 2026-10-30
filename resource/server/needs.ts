@@ -1,10 +1,13 @@
 import {
   AdminPanel,
+  onCharacter,
   onClientEvent,
+  PlayerMap,
   registerExport,
   resourceExport,
 } from "@aicore-fivem/lib/server";
-import { CORE, type CharacterInfo } from "@aicore-fivem/shared";
+import { isRecord, oneArg, readFinite } from "@aicore-fivem/lib/shared";
+import { CORE } from "@aicore-fivem/shared";
 import {
   DEFAULT_NEEDS,
   EVENTS,
@@ -17,12 +20,8 @@ import { hudSchema } from "./schema";
 
 const core = resourceExport("ai-core");
 const panel = new AdminPanel(hudSchema);
-/** Panel settings, parsed again after every change. */
-const content = { settings: readSettings(panel.get("settings")) };
-panel.onChange(
-  "settings",
-  () => (content.settings = readSettings(panel.get("settings"))),
-);
+/** Panel settings, kept current by the panel. */
+const settings = panel.view("settings", readSettings);
 
 const clamp = (v: number): number => Math.min(100, Math.max(0, v));
 const isNeed = (v: unknown): v is Need =>
@@ -33,7 +32,7 @@ const isNeed = (v: unknown): v is Need =>
  * and mirrored here. The owner gets a snapshot at load and a delta whenever a rounded value changes.
  */
 class NeedsStore {
-  private readonly byPlayer = new Map<number, Needs>();
+  private readonly byPlayer = new PlayerMap<Needs>();
 
   load(source: number): void {
     const needs = { ...DEFAULT_NEEDS };
@@ -71,25 +70,25 @@ class NeedsStore {
   /** One minute passed: hunger and thirst drop, stress fades. */
   tick(): void {
     for (const source of this.byPlayer.keys()) {
-      this.add(source, "hunger", -content.settings.hungerRate);
-      this.add(source, "thirst", -content.settings.thirstRate);
-      this.add(source, "stress", -content.settings.stressRelief);
+      this.add(source, "hunger", -settings.value.hungerRate);
+      this.add(source, "thirst", -settings.value.thirstRate);
+      this.add(source, "stress", -settings.value.stressRelief);
     }
   }
 }
 
 export const needs = new NeedsStore();
 
-on(CORE.playerLoadedEvent, (source: number, _character: CharacterInfo) =>
-  needs.load(source),
-);
-on(CORE.playerUnloadedEvent, (source: number) => needs.drop(source));
-on("playerDropped", () => needs.drop(Number(globalThis.source)));
+// Also loads the characters already in the game after a restart of this resource.
+onCharacter({
+  loaded: (source) => needs.load(source),
+  unloaded: (source) => needs.drop(source),
+});
 setInterval(() => needs.tick(), 60_000);
 
 // Items with hunger / thirst / stress values (ai-core's item use event).
 on(CORE.itemUsedEvent, (source: number, _name: string, status: unknown) => {
-  if (typeof status !== "object" || status === null) return;
+  if (!isRecord(status)) return;
   for (const [need, value] of Object.entries(status))
     if (isNeed(need) && typeof value === "number")
       needs.add(source, need, value);
@@ -98,8 +97,10 @@ on(CORE.itemUsedEvent, (source: number, _name: string, status: unknown) => {
 onClientEvent(
   EVENTS.stress,
   {
-    args: ([amount]) =>
-      typeof amount === "number" && amount > 0 && amount <= 5 ? [amount] : null,
+    args: oneArg((v) => {
+      const amount = readFinite(v);
+      return amount !== null && amount > 0 && amount <= 5 ? amount : null;
+    }),
     rate: { count: 2, windowMs: 1000 },
   },
   (source, amount) => needs.add(source, "stress", amount),
@@ -116,6 +117,3 @@ registerExport("AddNeed", (source: unknown, need: unknown, delta: unknown) => {
   if (typeof source === "number" && isNeed(need) && typeof delta === "number")
     needs.add(source, need, delta);
 });
-
-/** After a restart of this resource: needs of the players already in the game. */
-for (const source of core.GetLoadedSources()) needs.load(source);

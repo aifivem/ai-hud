@@ -1,4 +1,9 @@
-import { onClientCallback, resourceExport } from "@aicore-fivem/lib/server";
+import {
+  onCharacter,
+  onClientCallback,
+  PlayerMap,
+  resourceExport,
+} from "@aicore-fivem/lib/server";
 import { CORE } from "@aicore-fivem/shared";
 import { EVENTS, type JobView } from "common/hud";
 
@@ -9,7 +14,7 @@ const core = resourceExport("ai-core");
  * ai-core's labels. The client takes a snapshot when it starts; the owner gets a delta when the shown job changes.
  */
 class JobLabels {
-  private readonly sent = new Map<number, string>();
+  private readonly sent = new PlayerMap<string>();
 
   private view(source: number): JobView | null {
     const jobs = core.GetJobs(source);
@@ -47,9 +52,10 @@ class JobLabels {
 
 const labels = new JobLabels();
 
-on(CORE.playerLoadedEvent, (source: number) => labels.push(source));
+onCharacter({
+  loaded: (source) => labels.push(source),
+  unloaded: (source) => labels.drop(source),
+});
 on(CORE.jobsChangedEvent, (source: number) => labels.push(source));
 on(CORE.dutyChangedEvent, (source: number) => labels.push(source));
-on(CORE.playerUnloadedEvent, (source: number) => labels.drop(source));
-on("playerDropped", () => labels.drop(Number(globalThis.source)));
 onClientCallback(EVENTS.job, (source) => labels.snapshot(source));

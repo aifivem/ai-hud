@@ -1,4 +1,4 @@
-import { bool, num, record } from "@aicore-fivem/lib/shared";
+import { bool, int, num, record } from "@aicore-fivem/lib/shared";
 import type { KeyHintView } from "@aicore-fivem/shared";
 
 /** ai-hud's contracts: needs, panel settings, events and the NUI messages. No natives. */
@@ -62,6 +62,12 @@ export interface Settings {
   thirstRate: number;
   /** Stress points that fade per minute. */
   stressRelief: number;
+  /** km/h above which driving may add a stress point. */
+  stressSpeed: number;
+  /** Chance in % per speed change above `stressSpeed` to add a point. */
+  stressSpeedChance: number;
+  /** Stress points a shot adds (at most once a second). */
+  stressShot: number;
   /** Health lost every 10 s while hunger or thirst is at 0. */
   emptyDamage: number;
   speedUnit: "kmh" | "mph";
@@ -86,6 +92,9 @@ export function readSettings(raw: unknown): Settings {
     hungerRate: num(s.hungerRate, 0.25, 0, 10),
     thirstRate: num(s.thirstRate, 0.35, 0, 10),
     stressRelief: num(s.stressRelief, 0.5, 0, 10),
+    stressSpeed: num(s.stressSpeed, 160, 0, 500),
+    stressSpeedChance: num(s.stressSpeedChance, 1, 0, 100),
+    stressShot: int(s.stressShot, 1, 0, 5),
     emptyDamage: num(s.emptyDamage, 2, 0, 50),
     speedUnit: s.speedUnit === "mph" ? "mph" : "kmh",
     keyHints: bool(s.keyHints, true),

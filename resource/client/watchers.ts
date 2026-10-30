@@ -1,4 +1,8 @@
-import { SEATBELT_EVENT } from "@aicore-fivem/shared";
+import {
+  PLAYER_BAGS,
+  SEATBELT_EVENT,
+  VEHICLE_BAGS,
+} from "@aicore-fivem/shared";
 import {
   cache,
   EntityState,
@@ -17,9 +21,9 @@ import {
   type VehicleInfo,
 } from "common/hud";
 
-const fuelState = new EntityState("fuel", stateNumber);
+const fuelState = new EntityState(VEHICLE_BAGS.fuel, stateNumber);
 /** pma-voice keeps the current range in the player state (`proximity.index`). */
-const voiceRange = new PlayerState("proximity", (v) =>
+const voiceRange = new PlayerState(PLAYER_BAGS.proximity, (v) =>
   isRecord(v) && typeof v.index === "number" ? v.index : undefined,
 );
 let seatbelt: boolean | null =
@@ -33,6 +37,15 @@ on(
 const NO_BELT = new Set([8, 13, 14, 15, 16, 21]);
 
 export const send = (message: NuiMessage): void => SendNUIMessage(message);
+
+let lastStress = -Infinity;
+/** Reports stress to the server at most once a second (its rate for the event); a skipped point is dropped. */
+export function addStress(amount: number): void {
+  const now = GetGameTimer();
+  if (amount <= 0 || now - lastStress < 1000) return;
+  lastStress = now;
+  emitNet(EVENTS.stress, amount);
+}
 
 /**
  * Everything the HUD shows that the game knows: read on timers sized to how fast it changes, sent to the NUI only when
@@ -148,11 +161,13 @@ export class Watchers {
     if (key === this.lastVehicle) return;
     this.lastVehicle = key;
     send({ action: "vehicle", data: info });
-    // Speeding stresses (the server only ever adds, at most twice a second).
+    // Speeding stresses (the server only ever adds).
+    const { stressSpeed, stressSpeedChance } = this.settings();
     if (
-      speed > (this.settings().speedUnit === "mph" ? 100 : 160) &&
-      Math.random() < 0.01
+      stressSpeed > 0 &&
+      mps * 3.6 > stressSpeed &&
+      Math.random() * 100 < stressSpeedChance
     )
-      emitNet(EVENTS.stress, 1);
+      addStress(1);
   }
 }

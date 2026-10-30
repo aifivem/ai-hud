@@ -25,6 +25,24 @@
       "minimum": 0,
       "maximum": 10
     },
+    "stressSpeed": {
+      "description": "Stress speed: Driving faster than this may add a stress point. 0 turns it off.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 500
+    },
+    "stressSpeedChance": {
+      "description": "Speed stress chance: Chance per speed change above the stress speed to add a point.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "stressShot": {
+      "description": "Stress per shot: Points a shot adds, at most once a second. 0 turns it off.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5
+    },
     "emptyDamage": {
       "description": "Damage when empty: Health lost every 10 seconds while food or water is at 0. 0 turns it off.",
       "type": "number",
@@ -91,6 +109,9 @@
     "hungerRate",
     "thirstRate",
     "stressRelief",
+    "stressSpeed",
+    "stressSpeedChance",
+    "stressShot",
     "emptyDamage",
     "speedUnit",
     "show"

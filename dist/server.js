@@ -34,14 +34,23 @@ var SourceLock = class {
 function num(value, fallback, min = -Infinity, max = Infinity) {
 	return typeof value == "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
 }
+function int(value, fallback, min = -Infinity, max = Infinity) {
+	return Math.round(num(value, fallback, min, max));
+}
 function bool(value, fallback) {
 	return typeof value == "boolean" ? value : fallback;
 }
 function record(value) {
 	return typeof value == "object" && value && !Array.isArray(value) ? value : {};
 }
-// ../../../packages/lib/src/shared/records.ts
-const isObject = (value) => typeof value == "object" && !!value && !Array.isArray(value);
+// ../../../packages/lib/src/shared/strict.ts
+function readFinite(value) {
+	return typeof value == "number" && Number.isFinite(value) ? value : null;
+}
+const oneArg = (read) => ([value]) => {
+	let parsed = read(value);
+	return parsed === null ? null : [parsed];
+}, isObject = (value) => typeof value == "object" && !!value && !Array.isArray(value);
 function readRecords(raw, readOne) {
 	let out = new Map();
 	if (!isObject(raw)) return out;
@@ -208,7 +217,7 @@ const CORE = {
 	clientPlayerLoadedEvent: "ai-core:client:playerLoaded",
 	clientPlayerUnloadedEvent: "ai-core:client:playerUnloaded",
 	clientCharacterPortraitEvent: "ai-core:client:characterPortrait",
-	clientCharacterLookEvent: "ai-core:client:characterLook",
+	characterLooksEvent: "ai-core:client:characterLooks",
 	clientPromptPressedEvent: "ai-core:client:promptPressed",
 	clientCacheEvent: "ai-core:client:cache",
 	clientHudVisibleEvent: "ai-core:client:hudVisible",
@@ -378,7 +387,7 @@ function toPatch(value) {
 		default: return null;
 	}
 }
-const clone = (value) => value === void 0 ? value : JSON.parse(JSON.stringify(value)), core$15 = resourceExport(CORE.resource), ERR = {
+const clone = (value) => value === void 0 ? value : JSON.parse(JSON.stringify(value)), core$16 = resourceExport(CORE.resource), ERR = {
 	type: "ADMIN_ERR_TYPE",
 	range: "ADMIN_ERR_RANGE",
 	length: "ADMIN_ERR_LENGTH",
@@ -392,7 +401,7 @@ const clone = (value) => value === void 0 ? value : JSON.parse(JSON.stringify(va
 		if (cached && Date.now() - cached.at < 2e3) return cached.values.size > 0 ? cached.values : null;
 		let list = [];
 		try {
-			list = core$15.GetLookupValues(source);
+			list = core$16.GetLookupValues(source);
 		} catch {}
 		let values = new Set(Array.isArray(list) ? list.filter((v) => typeof v == "string") : []);
 		return this.lists.set(source, {
@@ -595,7 +604,7 @@ function writeSchema(resource, name, text, log) {
 	(0, node_fs_promises.mkdir)(dir, { recursive: !0 }).then(() => (0, node_fs_promises.writeFile)(`${dir}/${name}.schema.json`, text, "utf8")).catch((error) => log.error(`writing ${resource}/${path} failed`, error));
 }
 // ../../../packages/lib/src/server/admin/panel.ts
-const core$14 = resourceExport(CORE.resource), DEFAULT_KEY = "^[a-z0-9_]{2,32}$";
+const core$15 = resourceExport(CORE.resource), DEFAULT_KEY = "^[a-z0-9_]{2,32}$";
 function imported(spec, value) {
 	let base = clone(spec.newRecord ?? {}), out = {};
 	for (let name of Object.keys(spec.sections)) {
@@ -619,7 +628,7 @@ var AdminPanel = class {
 	constructor(schema) {
 		this.schema = schema;
 		for (let [name, spec] of Object.entries(schema.files)) this.load(name, spec);
-		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges)), setImmediate(() => core$14.RegisterAdminPanel(this.resource));
+		registerExport("AdminPanelSnapshot", () => this.snapshot()), registerExport("AdminPanelApply", (admin, patch) => this.apply(admin, patch)), onClientCallback(ADMIN.worldChangesCallback(this.resource), () => Object.fromEntries(this.worldChanges)), setImmediate(() => core$15.RegisterAdminPanel(this.resource));
 	}
 	get(file) {
 		return this.data.get(file) ?? {};
@@ -753,7 +762,7 @@ var AdminPanel = class {
 		let spec = this.schema.files[file], data = this.get(file), value = key === void 0 ? data : data[key] ?? null;
 		this.dataFiles.get(file)?.write(data), this.views.changed(file, key, value);
 		for (let handler of this.handlers.get(file) ?? []) handler(key, value);
-		if (core$14.AdminPanelChanged({
+		if (core$15.AdminPanelChanged({
 			resource: this.resource,
 			file,
 			key,
@@ -785,7 +794,7 @@ function notify(source, text, kind = "info", duration) {
 }
 resourceExport(CORE.resource);
 // ../../../packages/lib/src/server/online.ts
-const core$12 = resourceExport(CORE.resource);
+const core$13 = resourceExport(CORE.resource);
 var OnlinePlayers = class {
 	players = new Map();
 	onDuty = new Map();
@@ -794,7 +803,7 @@ var OnlinePlayers = class {
 		if (this.started) return;
 		this.started = !0;
 		let load = (source, character) => {
-			this.put(source, character, (core$12.GetJobs(source) ?? []).map((m) => m.job), (core$12.GetGangs(source) ?? []).map((m) => m.gang)), this.setDuty(source, core$12.GetDutyJob(source));
+			this.put(source, character, (core$13.GetJobs(source) ?? []).map((m) => m.job), (core$13.GetGangs(source) ?? []).map((m) => m.gang)), this.setDuty(source, core$13.GetDutyJob(source));
 		};
 		on(CORE.playerLoadedEvent, load), on(CORE.playerUnloadedEvent, (source) => this.drop(source)), on(CORE.jobsChangedEvent, (source, jobs) => {
 			let player = this.players.get(source);
@@ -803,8 +812,8 @@ var OnlinePlayers = class {
 			let player = this.players.get(source);
 			player && (player.gangs = gangs.map((m) => m.gang));
 		}), on(CORE.dutyChangedEvent, (source, job) => this.setDuty(source, job));
-		for (let source of core$12.GetLoadedSources()) {
-			let character = core$12.GetCharacter(source);
+		for (let source of core$13.GetLoadedSources()) {
+			let character = core$13.GetCharacter(source);
 			character && load(source, character);
 		}
 	}
@@ -847,8 +856,55 @@ var OnlinePlayers = class {
 		return this.start(), this.onDuty.get(job) ?? EMPTY;
 	}
 };
-const EMPTY = new Set();
-new OnlinePlayers(), resourceExport(CORE.resource), resourceExport(CORE.resource), createLogger(GetCurrentResourceName());
+const EMPTY = new Set(), online = new OnlinePlayers();
+resourceExport(CORE.resource), resourceExport(CORE.resource);
+// ../../../packages/lib/src/server/players.ts
+const log$3 = createLogger(GetCurrentResourceName()), dropped = new Set();
+let listening = !1;
+function onDropped(fn) {
+	listening || (listening = !0, on("playerDropped", () => {
+		let source = Number(globalThis.source);
+		for (let handler of dropped) handler(source);
+	})), dropped.add(fn);
+}
+var PlayerMap = class extends Map {
+	constructor(options = {}) {
+		super(), onDropped((source) => {
+			if (!this.has(source)) return;
+			let value = this.get(source);
+			this.delete(source), options.onDrop?.(source, value);
+		});
+	}
+};
+function onCharacter(handlers) {
+	let live = new Map(), deliver = (source, character) => {
+		if (live.set(source, character.id), handlers.loaded) try {
+			let result = handlers.loaded(source, character);
+			result instanceof Promise && result.catch((error) => log$3.error(`character loaded handler failed for ${source}`, error));
+		} catch (error) {
+			log$3.error(`character loaded handler failed for ${source}`, error);
+		}
+	}, end = (source, charId) => {
+		if (live.delete(source)) try {
+			handlers.unloaded?.(source, charId);
+		} catch (error) {
+			log$3.error(`character unloaded handler failed for ${source}`, error);
+		}
+	};
+	on(CORE.playerLoadedEvent, (source, character) => {
+		let previous = live.get(source);
+		previous !== void 0 && end(source, previous), deliver(source, character);
+	}), on(CORE.playerUnloadedEvent, (source, charId) => end(source, charId)), onDropped((source) => setImmediate(() => {
+		let charId = live.get(source);
+		charId !== void 0 && end(source, charId);
+	})), setImmediate(() => {
+		for (let source of online.sources()) {
+			if (live.has(source)) continue;
+			let character = online.character(source);
+			character && deliver(source, character);
+		}
+	});
+}
 // ../../../packages/lib/src/server/command.ts
 const resource = GetCurrentResourceName(), log$2 = createLogger(resource);
 let texts = null;
@@ -958,7 +1014,7 @@ function onClientEvent(name, first, second) {
 		args && gate.run(source, void 0, () => handler(source, ...args)).catch((error) => log$1.error(`event ${name} failed for ${source}`, error));
 	});
 }
-createLogger("aicore-lib"), IsDuplicityVersion(), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource);
+createLogger("aicore-lib"), IsDuplicityVersion(), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource), resourceExport(CORE.resource);
 // resource/common/hud.ts
 const NEEDS = [
 	"hunger",
@@ -982,6 +1038,9 @@ function readSettings(raw) {
 		hungerRate: num(s.hungerRate, .25, 0, 10),
 		thirstRate: num(s.thirstRate, .35, 0, 10),
 		stressRelief: num(s.stressRelief, .5, 0, 10),
+		stressSpeed: num(s.stressSpeed, 160, 0, 500),
+		stressSpeedChance: num(s.stressSpeedChance, 1, 0, 100),
+		stressShot: int(s.stressShot, 1, 0, 5),
 		emptyDamage: num(s.emptyDamage, 2, 0, 50),
 		speedUnit: s.speedUnit === "mph" ? "mph" : "kmh",
 		keyHints: bool(s.keyHints, !0),
@@ -1018,6 +1077,23 @@ const hudSchema = {
 				type: "number",
 				min: 0,
 				max: 10
+			},
+			stressSpeed: {
+				type: "number",
+				min: 0,
+				max: 500,
+				integer: !0
+			},
+			stressSpeedChance: {
+				type: "number",
+				min: 0,
+				max: 100
+			},
+			stressShot: {
+				type: "number",
+				min: 0,
+				max: 5,
+				integer: !0
 			},
 			emptyDamage: {
 				type: "number",
@@ -1091,6 +1167,34 @@ const hudSchema = {
 						max: 10,
 						step: .05,
 						unit: "ADMIN_U_PER_MIN"
+					},
+					{
+						widget: "number",
+						path: "stressSpeed",
+						label: "ADMIN_F_STRESS_SPEED",
+						hint: "ADMIN_H_STRESS_SPEED",
+						min: 0,
+						max: 500,
+						step: 10,
+						unit: "km/h"
+					},
+					{
+						widget: "number",
+						path: "stressSpeedChance",
+						label: "ADMIN_F_STRESS_SPEED_CHANCE",
+						hint: "ADMIN_H_STRESS_SPEED_CHANCE",
+						min: 0,
+						max: 100,
+						step: .5,
+						unit: "%"
+					},
+					{
+						widget: "number",
+						path: "stressShot",
+						label: "ADMIN_F_STRESS_SHOT",
+						hint: "ADMIN_H_STRESS_SHOT",
+						min: 0,
+						max: 5
 					},
 					{
 						widget: "number",
@@ -1179,10 +1283,8 @@ const hudSchema = {
 			}
 		]
 	}]
-}, core$1 = resourceExport("ai-core"), panel = new AdminPanel(hudSchema), content = { settings: readSettings(panel.get("settings")) };
-panel.onChange("settings", () => content.settings = readSettings(panel.get("settings")));
-const clamp = (v) => Math.min(100, Math.max(0, v)), isNeed = (v) => typeof v == "string" && NEEDS.includes(v), needs = new class {
-	byPlayer = new Map();
+}, core$1 = resourceExport("ai-core"), settings = new AdminPanel(hudSchema).view("settings", readSettings), clamp = (v) => Math.min(100, Math.max(0, v)), isNeed = (v) => typeof v == "string" && NEEDS.includes(v), needs = new class {
+	byPlayer = new PlayerMap();
 	load(source) {
 		let needs = { ...DEFAULT_NEEDS };
 		for (let need of NEEDS) {
@@ -1208,13 +1310,19 @@ const clamp = (v) => Math.min(100, Math.max(0, v)), isNeed = (v) => typeof v == 
 		needs && this.set(source, need, needs[need] + delta);
 	}
 	tick() {
-		for (let source of this.byPlayer.keys()) this.add(source, "hunger", -content.settings.hungerRate), this.add(source, "thirst", -content.settings.thirstRate), this.add(source, "stress", -content.settings.stressRelief);
+		for (let source of this.byPlayer.keys()) this.add(source, "hunger", -settings.value.hungerRate), this.add(source, "thirst", -settings.value.thirstRate), this.add(source, "stress", -settings.value.stressRelief);
 	}
 }();
-on(CORE.playerLoadedEvent, (source, _character) => needs.load(source)), on(CORE.playerUnloadedEvent, (source) => needs.drop(source)), on("playerDropped", () => needs.drop(Number(globalThis.source))), setInterval(() => needs.tick(), 6e4), on(CORE.itemUsedEvent, (source, _name, status) => {
-	if (typeof status == "object" && status) for (let [need, value] of Object.entries(status)) isNeed(need) && typeof value == "number" && needs.add(source, need, value);
+onCharacter({
+	loaded: (source) => needs.load(source),
+	unloaded: (source) => needs.drop(source)
+}), setInterval(() => needs.tick(), 6e4), on(CORE.itemUsedEvent, (source, _name, status) => {
+	if (isRecord(status)) for (let [need, value] of Object.entries(status)) isNeed(need) && typeof value == "number" && needs.add(source, need, value);
 }), onClientEvent(EVENTS.stress, {
-	args: ([amount]) => typeof amount == "number" && amount > 0 && amount <= 5 ? [amount] : null,
+	args: oneArg((v) => {
+		let amount = readFinite(v);
+		return amount !== null && amount > 0 && amount <= 5 ? amount : null;
+	}),
 	rate: {
 		count: 2,
 		windowMs: 1e3
@@ -1224,10 +1332,9 @@ on(CORE.playerLoadedEvent, (source, _character) => needs.load(source)), on(CORE.
 }), registerExport("AddNeed", (source, need, delta) => {
 	typeof source == "number" && isNeed(need) && typeof delta == "number" && needs.add(source, need, delta);
 });
-for (let source of core$1.GetLoadedSources()) needs.load(source);
 // resource/server/job.ts
 const core = resourceExport("ai-core"), labels = new class {
-	sent = new Map();
+	sent = new PlayerMap();
 	view(source) {
 		let jobs = core.GetJobs(source);
 		if (!jobs) return null;
@@ -1252,7 +1359,10 @@ const core = resourceExport("ai-core"), labels = new class {
 		this.sent.delete(source);
 	}
 }();
-on(CORE.playerLoadedEvent, (source) => labels.push(source)), on(CORE.jobsChangedEvent, (source) => labels.push(source)), on(CORE.dutyChangedEvent, (source) => labels.push(source)), on(CORE.playerUnloadedEvent, (source) => labels.drop(source)), on("playerDropped", () => labels.drop(Number(globalThis.source))), onClientCallback(EVENTS.job, (source) => labels.snapshot(source));
+onCharacter({
+	loaded: (source) => labels.push(source),
+	unloaded: (source) => labels.drop(source)
+}), on(CORE.jobsChangedEvent, (source) => labels.push(source)), on(CORE.dutyChangedEvent, (source) => labels.push(source)), onClientCallback(EVENTS.job, (source) => labels.snapshot(source));
 // resource/common/locale.ts
 const Locale = createLocale();
 // resource/server/command.ts

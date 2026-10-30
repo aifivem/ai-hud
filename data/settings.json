@@ -3,6 +3,9 @@
   "hungerRate": 0.25,
   "thirstRate": 0.35,
   "stressRelief": 0.5,
+  "stressSpeed": 160,
+  "stressSpeedChance": 1,
+  "stressShot": 1,
   "emptyDamage": 2,
   "speedUnit": "kmh",
   "show": {
