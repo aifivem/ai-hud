@@ -6,6 +6,7 @@ import { ResourceName } from "common/resource";
 import { send } from "./watchers";
 
 const log = createLogger(ResourceName);
+const core = resourceExport("ai-core");
 
 /**
  * Top right of the HUD: server id and character name from ai-core's player data, the job with its labels from this
@@ -19,7 +20,7 @@ export class Identity {
     // After a restart of this resource ai-core does not push again: start from its current snapshot. When ai-core
     // restarts too (its client may not have registered the export yet) its own push on load fills the HUD instead.
     try {
-      const data = resourceExport("ai-core").GetPlayerData();
+      const data = core.GetPlayerData();
       if (data) seedPlayerData(data);
     } catch (error) {
       log.warn("ai-core's player data is not ready yet", error);
