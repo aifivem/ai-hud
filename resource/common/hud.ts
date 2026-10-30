@@ -1,6 +1,42 @@
 import { bool, num, record } from "@aicore-fivem/lib/shared";
+import type { KeyHintView } from "@aicore-fivem/shared";
 
 /** ai-hud's contracts: needs, panel settings, events and the NUI messages. No natives. */
+
+/** What a player turns off for themself in /hud (stored in their KVP); the panel's switches still decide first. */
+export interface Prefs {
+  v: 1;
+  needs: boolean;
+  money: boolean;
+  speedometer: boolean;
+  street: boolean;
+  voice: boolean;
+  identity: boolean;
+  keyHints: boolean;
+  /** Minimap on foot even when the panel says "only in a vehicle". */
+  minimapAlways: boolean;
+}
+
+export const DEFAULT_PREFS: Prefs = {
+  v: 1,
+  needs: true,
+  money: true,
+  speedometer: true,
+  street: true,
+  voice: true,
+  identity: true,
+  keyHints: true,
+  minimapAlways: false,
+};
+
+export function readPrefs(raw: unknown): Prefs {
+  const p = record(raw);
+  if (p.v !== 1) return { ...DEFAULT_PREFS };
+  const out = { ...DEFAULT_PREFS };
+  for (const key of Object.keys(DEFAULT_PREFS) as Array<keyof Prefs>)
+    if (key !== "v" && typeof p[key] === "boolean") out[key] = p[key];
+  return out;
+}
 
 export const NEEDS = ["hunger", "thirst", "stress"] as const;
 export type Need = (typeof NEEDS)[number];
@@ -19,6 +55,8 @@ export const EVENTS = {
   job: "ai-hud:job",
   /** Server -> owner: (job: JobView | null) the shown job changed (load, job or duty change). */
   jobSet: "ai-hud:client:job",
+  /** Server -> player: () the /hud command: the settings menu opens. */
+  openSettings: "ai-hud:client:openSettings",
 } as const;
 
 export interface Settings {
@@ -30,6 +68,10 @@ export interface Settings {
   /** Health lost every 10 s while hunger or thirst is at 0. */
   emptyDamage: number;
   speedUnit: "kmh" | "mph";
+  /** Key hints on the left (ai-core's list: keybinds for the situation and hints scripts add). */
+  keyHints: boolean;
+  /** The minimap on foot too, or only in a vehicle. */
+  minimap: "always" | "vehicle";
   show: {
     needs: boolean;
     money: boolean;
@@ -49,6 +91,8 @@ export function readSettings(raw: unknown): Settings {
     stressRelief: num(s.stressRelief, 0.5, 0, 10),
     emptyDamage: num(s.emptyDamage, 2, 0, 50),
     speedUnit: s.speedUnit === "mph" ? "mph" : "kmh",
+    keyHints: bool(s.keyHints, true),
+    minimap: s.minimap === "vehicle" ? "vehicle" : "always",
     show: {
       needs: bool(show.needs, true),
       money: bool(show.money, true),
@@ -100,6 +144,7 @@ export type NuiMessage =
       data: { texts: Record<string, string>; settings: Settings };
     }
   | { action: "visible"; data: boolean }
+  | { action: "keyHints"; data: KeyHintView[] }
   | { action: "needs"; data: Partial<Needs> }
   | { action: "vitals"; data: Vitals }
   | { action: "money"; data: Record<string, number> }

@@ -14,6 +14,7 @@ import {
 import { useLang } from "../lib/lang";
 import { useAppSelector } from "../store/hud";
 import { clamp, DANGER, IconCircle, Pill, TEXT_SHADOW, Value } from "./parts";
+import { KeyHints } from "./KeyHints";
 import { Speedometer } from "./Speedometer";
 
 /** lumihud status colours (IndicatorBox defaults). */
@@ -297,6 +298,7 @@ export function Hud() {
       )}
       {(settings.show.money || settings.show.identity) && <TopRight />}
       {settings.show.speedometer && <Speedometer />}
+      {settings.keyHints && <KeyHints />}
     </div>
   );
 }

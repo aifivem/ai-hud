@@ -4,6 +4,7 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
+import type { KeyHintView } from "@aicore-fivem/shared";
 import type {
   JobView,
   Needs,
@@ -23,6 +24,7 @@ interface HudState {
   voice: { talking: boolean; mode: number; radio: boolean };
   identity: { serverId: number; name: string } | null;
   job: JobView | null;
+  keyHints: KeyHintView[];
 }
 
 const initialState: HudState = {
@@ -33,6 +35,8 @@ const initialState: HudState = {
     stressRelief: 0,
     emptyDamage: 0,
     speedUnit: "kmh",
+    keyHints: true,
+    minimap: "always",
     show: {
       needs: true,
       money: true,
@@ -51,6 +55,7 @@ const initialState: HudState = {
   voice: { talking: false, mode: 2, radio: false },
   identity: null,
   job: null,
+  keyHints: [],
 };
 
 /** What the HUD draws; every message from the client carries only what changed. */
@@ -82,6 +87,8 @@ const hud = createSlice({
     ) => void (state.identity = a.payload),
     jobSet: (state, a: PayloadAction<JobView | null>) =>
       void (state.job = a.payload),
+    keyHintsSet: (state, a: PayloadAction<KeyHintView[]>) =>
+      void (state.keyHints = a.payload),
   },
 });
 
@@ -96,6 +103,7 @@ export const {
   voiceSet,
   identitySet,
   jobSet,
+  keyHintsSet,
 } = hud.actions;
 export const store = configureStore({ reducer: { hud: hud.reducer } });
 export type RootState = ReturnType<typeof store.getState>;

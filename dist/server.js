@@ -47,6 +47,12 @@ function isRecord(value) {
 function logSafe(text, max) {
 	return text.replace(/\r?\n/g, " | ").replace(/[\u0000-\u001f\u007f]/g, "").replace(/\^\d/g, "").slice(0, max);
 }
+function formatText(template, args) {
+	return template.replace(/\{(\d+)\}/g, (match, index) => {
+		let value = args[Number(index)];
+		return value === void 0 ? match : String(value);
+	});
+}
 function createLogger(resource) {
 	let prefix = `[${resource}]`;
 	return {
@@ -165,6 +171,10 @@ function readLocaleFile(resource, lang) {
 	let texts = {};
 	for (let [key, value] of Object.entries(parsed)) typeof value == "string" && (texts[key] = value);
 	return texts;
+}
+function createLocale() {
+	let texts = loadLocaleTexts();
+	return (key, ...args) => formatText(texts[key] ?? key, args);
 }
 function loadLocaleTexts(resource = GetCurrentResourceName()) {
 	let lang = GetConvar("ai:locale", "en"), texts = {
@@ -362,7 +372,7 @@ function langFile(resource) {
 		return {};
 	}
 }
-function texts(resource) {
+function texts$1(resource) {
 	return {
 		...langFile("ai-core"),
 		...langFile(resource)
@@ -455,7 +465,7 @@ function objectOf(fields, prefix, desc) {
 	};
 }
 function fileSchema(resource, schema, name, spec) {
-	let desc = describe(schema, name, texts(resource)), title = `${resource}/data/${name}.json`, body = spec.kind === "settings" ? (() => {
+	let desc = describe(schema, name, texts$1(resource)), title = `${resource}/data/${name}.json`, body = spec.kind === "settings" ? (() => {
 		let obj = objectOf(spec.sections, "", desc), required = obj.required.filter((k) => !(k in (spec.defaults ?? {})));
 		return {
 			...obj,
@@ -619,6 +629,15 @@ var AdminPanel = class {
 		this.data.set(name, data), (filled || raw === null || !file.hasSchemaRef()) && file.write(data);
 	}
 };
+// ../../../packages/lib/src/server/notify.ts
+function notify(source, text, kind = "info", duration) {
+	let notification = {
+		text,
+		kind,
+		duration
+	};
+	emitNet(CORE.clientNotifyEvent, source, notification);
+}
 resourceExport(CORE.resource);
 // ../../../packages/lib/src/server/online.ts
 const core$6 = resourceExport(CORE.resource);
@@ -686,8 +705,73 @@ var OnlinePlayers = class {
 const EMPTY = new Set();
 new OnlinePlayers(), resourceExport(CORE.resource), resourceExport(CORE.resource);
 // ../../../packages/lib/src/server/command.ts
-const resource = GetCurrentResourceName();
-createLogger(resource), new class {
+const resource = GetCurrentResourceName(), log$2 = createLogger(resource);
+let texts = null;
+const t = (key, ...args) => formatText((texts ??= loadLocaleTexts(CORE.resource))[key] ?? key, args);
+function reply(source, text, kind) {
+	source > 0 ? notify(source, text, kind) : log$2.info(text);
+}
+var Command = class {
+	params;
+	handler;
+	info;
+	usage;
+	constructor(names, params, help, aces, handler) {
+		this.params = params, this.handler = handler, this.info = {
+			names,
+			help,
+			params: params.map((p) => ({ ...p })),
+			aces
+		}, this.usage = [`/${names[0]}`, ...params.map((p) => p.optional ? `[${p.name}]` : `<${p.name}>`)].join(" ");
+	}
+	allowed(source, name) {
+		let aces = this.info.aces;
+		if (source <= 0 || !aces) return !0;
+		let player = String(source);
+		return aces.some((ace) => IsPlayerAceAllowed(player, ace)) || !!IsPlayerAceAllowed(player, `command.${name}`);
+	}
+	suggestion(name) {
+		return {
+			name: `/${name}`,
+			help: this.info.help,
+			params: this.params.map((p) => ({
+				name: p.name,
+				help: p.help ?? ""
+			}))
+		};
+	}
+	run(source, name, raw, line) {
+		if (!this.allowed(source, name)) return reply(source, t("COMMAND_NOT_ALLOWED"), "error");
+		let args = this.parse(raw);
+		if (typeof args == "string") return reply(source, args, "error"), reply(source, t("COMMAND_USAGE", this.usage), "info");
+		let fail = (error) => log$2.error(`command /${name} failed`, error);
+		try {
+			let result = this.handler(source, args, line);
+			result instanceof Promise && result.catch(fail);
+		} catch (error) {
+			fail(error);
+		}
+	}
+	parse(raw) {
+		let args = {};
+		for (let [i, param] of this.params.entries()) {
+			let token = param.type === "longString" ? raw.slice(i).join(" ").trim() : raw[i] ?? "";
+			if (token === "") {
+				if (!param.optional) return t("COMMAND_MISSING", param.name);
+			} else {
+				if (param.type === "number" || param.type === "playerId") {
+					let value = Number(token);
+					if (!Number.isFinite(value)) return t("COMMAND_NUMBER", param.name);
+					if (param.type === "playerId" && (!Number.isInteger(value) || value <= 0 || !GetPlayerName(String(value)))) return t("COMMAND_PLAYER", token);
+					args[param.name] = value;
+				} else args[param.name] = token;
+				if (param.type === "longString") break;
+			}
+		}
+		return args;
+	}
+};
+const commands = new class {
 	list = [];
 	sent = new Map();
 	announced = 0;
@@ -713,6 +797,13 @@ createLogger(resource), new class {
 		});
 	}
 }();
+function addCommand(name, options, handler) {
+	let names = (Array.isArray(name) ? name : [name]).map((n) => n.toLowerCase());
+	if (names.length === 0) throw Error("addCommand needs a name");
+	let restricted = options.restricted ?? !1, aces = restricted === !1 ? null : restricted === !0 ? [ADMIN.ace] : Array.isArray(restricted) ? [...restricted] : [restricted], command = new Command(names, options.params ?? [], options.help ?? "", aces, handler);
+	for (let n of names) RegisterCommand(n, (source, raw, line) => command.run(Number(source), n, raw, line), !1);
+	commands.add(command);
+}
 // ../../../packages/lib/src/server/netEvent.ts
 const log$1 = createLogger(GetCurrentResourceName());
 function onClientEvent(name, first, second) {
@@ -737,7 +828,8 @@ const NEEDS = [
 	need: "ai-hud:client:need",
 	stress: "ai-hud:stress",
 	job: "ai-hud:job",
-	jobSet: "ai-hud:client:job"
+	jobSet: "ai-hud:client:job",
+	openSettings: "ai-hud:client:openSettings"
 };
 function readSettings(raw) {
 	let s = record(raw), show = record(s.show);
@@ -747,6 +839,8 @@ function readSettings(raw) {
 		stressRelief: num(s.stressRelief, .5, 0, 10),
 		emptyDamage: num(s.emptyDamage, 2, 0, 50),
 		speedUnit: s.speedUnit === "mph" ? "mph" : "kmh",
+		keyHints: bool(s.keyHints, !0),
+		minimap: s.minimap === "vehicle" ? "vehicle" : "always",
 		show: {
 			needs: bool(show.needs, !0),
 			money: bool(show.money, !0),
@@ -789,6 +883,11 @@ const hudSchema = {
 				type: "enum",
 				values: ["kmh", "mph"]
 			},
+			keyHints: { type: "bool" },
+			minimap: {
+				type: "enum",
+				values: ["always", "vehicle"]
+			},
 			show: {
 				type: "object",
 				fields: {
@@ -800,6 +899,10 @@ const hudSchema = {
 					identity: { type: "bool" }
 				}
 			}
+		},
+		defaults: {
+			keyHints: !0,
+			minimap: "always"
 		}
 	} },
 	tabs: [{
@@ -808,102 +911,128 @@ const hudSchema = {
 		icon: "heart-pulse",
 		label: "ADMIN_TAB_SETTINGS",
 		desc: "ADMIN_TAB_SETTINGS_DESC",
-		cards: [{
-			icon: "utensils",
-			title: "ADMIN_C_NEEDS",
-			desc: "ADMIN_C_NEEDS_DESC",
-			fields: [
-				{
-					widget: "number",
-					path: "hungerRate",
-					label: "ADMIN_F_HUNGER_RATE",
-					hint: "ADMIN_H_RATE",
-					min: 0,
-					max: 10,
-					step: .05,
-					unit: "ADMIN_U_PER_MIN"
-				},
-				{
-					widget: "number",
-					path: "thirstRate",
-					label: "ADMIN_F_THIRST_RATE",
-					hint: "ADMIN_H_RATE",
-					min: 0,
-					max: 10,
-					step: .05,
-					unit: "ADMIN_U_PER_MIN"
-				},
-				{
-					widget: "number",
-					path: "stressRelief",
-					label: "ADMIN_F_STRESS_RELIEF",
-					hint: "ADMIN_H_STRESS_RELIEF",
-					min: 0,
-					max: 10,
-					step: .05,
-					unit: "ADMIN_U_PER_MIN"
-				},
-				{
-					widget: "number",
-					path: "emptyDamage",
-					label: "ADMIN_F_EMPTY_DAMAGE",
-					hint: "ADMIN_H_EMPTY_DAMAGE",
-					min: 0,
-					max: 50,
-					unit: "ADMIN_U_HP"
-				}
-			]
-		}, {
-			icon: "eye",
-			title: "ADMIN_C_SHOW",
-			desc: "ADMIN_C_SHOW_DESC",
-			fields: [
-				{
-					widget: "switch",
-					path: "show.needs",
-					label: "ADMIN_F_SHOW_NEEDS"
-				},
-				{
-					widget: "switch",
-					path: "show.money",
-					label: "ADMIN_F_SHOW_MONEY"
-				},
-				{
-					widget: "switch",
-					path: "show.speedometer",
-					label: "ADMIN_F_SHOW_SPEEDOMETER"
-				},
-				{
-					widget: "switch",
-					path: "show.street",
-					label: "ADMIN_F_SHOW_STREET"
-				},
-				{
-					widget: "switch",
-					path: "show.voice",
-					label: "ADMIN_F_SHOW_VOICE",
-					hint: "ADMIN_H_SHOW_VOICE"
-				},
-				{
-					widget: "switch",
-					path: "show.identity",
-					label: "ADMIN_F_SHOW_IDENTITY",
-					hint: "ADMIN_H_SHOW_IDENTITY"
-				},
-				{
+		cards: [
+			{
+				icon: "utensils",
+				title: "ADMIN_C_NEEDS",
+				desc: "ADMIN_C_NEEDS_DESC",
+				fields: [
+					{
+						widget: "number",
+						path: "hungerRate",
+						label: "ADMIN_F_HUNGER_RATE",
+						hint: "ADMIN_H_RATE",
+						min: 0,
+						max: 10,
+						step: .05,
+						unit: "ADMIN_U_PER_MIN"
+					},
+					{
+						widget: "number",
+						path: "thirstRate",
+						label: "ADMIN_F_THIRST_RATE",
+						hint: "ADMIN_H_RATE",
+						min: 0,
+						max: 10,
+						step: .05,
+						unit: "ADMIN_U_PER_MIN"
+					},
+					{
+						widget: "number",
+						path: "stressRelief",
+						label: "ADMIN_F_STRESS_RELIEF",
+						hint: "ADMIN_H_STRESS_RELIEF",
+						min: 0,
+						max: 10,
+						step: .05,
+						unit: "ADMIN_U_PER_MIN"
+					},
+					{
+						widget: "number",
+						path: "emptyDamage",
+						label: "ADMIN_F_EMPTY_DAMAGE",
+						hint: "ADMIN_H_EMPTY_DAMAGE",
+						min: 0,
+						max: 50,
+						unit: "ADMIN_U_HP"
+					}
+				]
+			},
+			{
+				icon: "eye",
+				title: "ADMIN_C_SHOW",
+				desc: "ADMIN_C_SHOW_DESC",
+				fields: [
+					{
+						widget: "switch",
+						path: "show.needs",
+						label: "ADMIN_F_SHOW_NEEDS"
+					},
+					{
+						widget: "switch",
+						path: "show.money",
+						label: "ADMIN_F_SHOW_MONEY"
+					},
+					{
+						widget: "switch",
+						path: "show.speedometer",
+						label: "ADMIN_F_SHOW_SPEEDOMETER"
+					},
+					{
+						widget: "switch",
+						path: "show.street",
+						label: "ADMIN_F_SHOW_STREET"
+					},
+					{
+						widget: "switch",
+						path: "show.voice",
+						label: "ADMIN_F_SHOW_VOICE",
+						hint: "ADMIN_H_SHOW_VOICE"
+					},
+					{
+						widget: "switch",
+						path: "show.identity",
+						label: "ADMIN_F_SHOW_IDENTITY",
+						hint: "ADMIN_H_SHOW_IDENTITY"
+					},
+					{
+						widget: "select",
+						path: "speedUnit",
+						label: "ADMIN_F_SPEED_UNIT",
+						options: [{
+							value: "kmh",
+							label: "ADMIN_O_KMH"
+						}, {
+							value: "mph",
+							label: "ADMIN_O_MPH"
+						}]
+					}
+				]
+			},
+			{
+				icon: "map",
+				title: "ADMIN_C_MAP_KEYS",
+				desc: "ADMIN_C_MAP_KEYS_DESC",
+				fields: [{
 					widget: "select",
-					path: "speedUnit",
-					label: "ADMIN_F_SPEED_UNIT",
+					path: "minimap",
+					label: "ADMIN_F_MINIMAP",
+					hint: "ADMIN_H_MINIMAP",
 					options: [{
-						value: "kmh",
-						label: "ADMIN_O_KMH"
+						value: "always",
+						label: "ADMIN_O_MINIMAP_ALWAYS"
 					}, {
-						value: "mph",
-						label: "ADMIN_O_MPH"
+						value: "vehicle",
+						label: "ADMIN_O_MINIMAP_VEHICLE"
 					}]
-				}
-			]
-		}]
+				}, {
+					widget: "switch",
+					path: "keyHints",
+					label: "ADMIN_F_KEY_HINTS",
+					hint: "ADMIN_H_KEY_HINTS"
+				}]
+			}
+		]
 	}]
 }, core$1 = resourceExport("ai-core"), panel = new AdminPanel(hudSchema), content = { settings: readSettings(panel.get("settings")) };
 panel.onChange("settings", () => content.settings = readSettings(panel.get("settings")));
@@ -979,3 +1108,9 @@ const core = resourceExport("ai-core"), labels = new class {
 	}
 }();
 on(CORE.playerLoadedEvent, (source) => labels.push(source)), on(CORE.jobsChangedEvent, (source) => labels.push(source)), on(CORE.dutyChangedEvent, (source) => labels.push(source)), on(CORE.playerUnloadedEvent, (source) => labels.drop(source)), on("playerDropped", () => labels.drop(Number(globalThis.source))), onClientCallback(EVENTS.job, (source) => labels.snapshot(source));
+// resource/common/locale.ts
+const Locale = createLocale();
+// resource/server/command.ts
+GetCurrentResourceName(), IsDuplicityVersion(), addCommand("hud", { help: Locale("COMMAND_HUD") }, (source) => {
+	source > 0 && emitNet(EVENTS.openSettings, source);
+});

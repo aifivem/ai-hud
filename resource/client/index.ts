@@ -6,8 +6,9 @@ import {
   loadLocaleTexts,
   onCache,
   onServerEvent,
+  resourceExport,
 } from "@aicore-fivem/lib/client";
-import { CORE } from "@aicore-fivem/shared";
+import { CORE, KEY_HINTS, type KeyHintView } from "@aicore-fivem/shared";
 import {
   DEFAULT_NEEDS,
   EVENTS,
@@ -17,7 +18,16 @@ import {
   type Needs,
 } from "common/hud";
 import { Identity } from "./identity";
+import { effective, openSettings, radar, registerHudExports } from "./prefs";
 import { send, Watchers } from "./watchers";
+
+const core = resourceExport("ai-core");
+const isHint = (v: unknown): v is KeyHintView =>
+  typeof v === "object" &&
+  v !== null &&
+  typeof Reflect.get(v, "id") === "string" &&
+  typeof Reflect.get(v, "key") === "string" &&
+  typeof Reflect.get(v, "label") === "string";
 
 const isNeed = (v: unknown): v is Need =>
   typeof v === "string" && (NEEDS as readonly string[]).includes(v);
@@ -44,8 +54,9 @@ class Hud {
   setup(): void {
     send({
       action: "setup",
-      data: { texts: loadLocaleTexts(), settings: this.settings },
+      data: { texts: loadLocaleTexts(), settings: effective(this.settings) },
     });
+    radar.update(this.visible, this.settings);
   }
 
   setNeeds(raw: Record<string, unknown>): void {
@@ -69,6 +80,7 @@ class Hud {
       this.uiAllows &&
       !IsPauseMenuActive() &&
       !IsScreenFadedOut();
+    radar.update(next, this.settings);
     if (next === this.visible) return;
     this.visible = next;
     send({ action: "visible", data: next });
@@ -108,6 +120,7 @@ const identity = new Identity();
 
 RegisterNuiCallback("ready", (_d: unknown, cb: (r: unknown) => void) => {
   hud.setup();
+  send({ action: "keyHints", data: core.GetKeyHints() });
   send({ action: "needs", data: hud.needs });
   identity.resend();
   const money = getPlayerData("money");
@@ -137,6 +150,15 @@ on(CORE.clientPlayerUnloadedEvent, () => {
   hud.updateVisible();
 });
 onCache("weapon", (weapon) => hud.watchWeapon(weapon));
+onCache("vehicle", () => hud.updateVisible());
+// ai-core's key hints: the list for the player's situation, sent again whenever it changes.
+on(KEY_HINTS.changedEvent, (list: unknown) => {
+  if (Array.isArray(list))
+    send({ action: "keyHints", data: list.filter(isHint) });
+});
+const reopen = () => void openSettings(() => hud.setup());
+onServerEvent(EVENTS.openSettings, reopen);
+registerHudExports(reopen, () => hud.setup());
 uiHud.onChange((visible) => {
   hud.uiAllows = visible;
   hud.updateVisible();

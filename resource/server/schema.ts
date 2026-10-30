@@ -14,6 +14,8 @@ export const hudSchema: PanelSchema = {
         stressRelief: { type: "number", min: 0, max: 10 },
         emptyDamage: { type: "number", min: 0, max: 50 },
         speedUnit: { type: "enum", values: ["kmh", "mph"] },
+        keyHints: { type: "bool" },
+        minimap: { type: "enum", values: ["always", "vehicle"] },
         show: {
           type: "object",
           fields: {
@@ -26,6 +28,7 @@ export const hudSchema: PanelSchema = {
           },
         },
       },
+      defaults: { keyHints: true, minimap: "always" },
     },
   },
   tabs: [
@@ -127,6 +130,29 @@ export const hudSchema: PanelSchema = {
                 { value: "kmh", label: "ADMIN_O_KMH" },
                 { value: "mph", label: "ADMIN_O_MPH" },
               ],
+            },
+          ],
+        },
+        {
+          icon: "map",
+          title: "ADMIN_C_MAP_KEYS",
+          desc: "ADMIN_C_MAP_KEYS_DESC",
+          fields: [
+            {
+              widget: "select",
+              path: "minimap",
+              label: "ADMIN_F_MINIMAP",
+              hint: "ADMIN_H_MINIMAP",
+              options: [
+                { value: "always", label: "ADMIN_O_MINIMAP_ALWAYS" },
+                { value: "vehicle", label: "ADMIN_O_MINIMAP_VEHICLE" },
+              ],
+            },
+            {
+              widget: "switch",
+              path: "keyHints",
+              label: "ADMIN_F_KEY_HINTS",
+              hint: "ADMIN_H_KEY_HINTS",
             },
           ],
         },

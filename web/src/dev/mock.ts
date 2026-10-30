@@ -7,7 +7,12 @@ const params = new URLSearchParams(window.location.search);
 const vehicle = params.get("vehicle") !== null;
 export const MOCK_SETUP = {
   texts: en,
-  settings: { ...settings, speedUnit: "kmh" } satisfies Settings,
+  settings: {
+    ...settings,
+    speedUnit: "kmh",
+    keyHints: true,
+    minimap: "always",
+  } satisfies Settings,
 };
 export const MOCK_NEEDS = { hunger: 64, thirst: 18, stress: 42 };
 export const MOCK_VITALS = { health: 86, armour: 50 };
@@ -27,3 +32,20 @@ export const MOCK_JOB = {
   grade: "Lead Mechanic",
   onDuty: params.get("offduty") === null,
 };
+
+/** Key hints on foot (in a vehicle with `?vehicle=1`). */
+export const MOCK_HINTS = vehicle
+  ? [
+      { id: "belt", key: "K", label: "Seatbelt" },
+      { id: "engine", key: "M", label: "Engine on / off" },
+      { id: "lock", key: "U", label: "Lock / unlock" },
+      { id: "inv", key: "F1", label: "Inventory" },
+    ]
+  : [
+      { id: "hotbar", key: "TAB", label: "Quick slots" },
+      { id: "inv", key: "F1", label: "Inventory" },
+      { id: "radial", key: "F3", label: "Radial menu" },
+      { id: "point", key: "B", label: "Point" },
+      { id: "hands", key: "X", label: "Hands up" },
+      { id: "lock", key: "U", label: "Lock / unlock" },
+    ];

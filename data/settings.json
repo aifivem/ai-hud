@@ -12,5 +12,7 @@
     "street": true,
     "voice": true,
     "identity": true
-  }
+  },
+  "keyHints": true,
+  "minimap": "always"
 }

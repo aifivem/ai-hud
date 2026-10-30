@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { fetchNui, useNuiEvent } from "fivem-nui-react";
 import type { NuiMessage } from "../../resource/common/hud";
 import {
+  MOCK_HINTS,
   MOCK_IDENTITY,
   MOCK_JOB,
   MOCK_MONEY,
@@ -17,6 +18,7 @@ import { setTexts } from "./lib/lang";
 import {
   identitySet,
   jobSet,
+  keyHintsSet,
   moneySet,
   needsSet,
   settingsSet,
@@ -47,6 +49,7 @@ const onStreet = (d: Data<"street">) => store.dispatch(streetSet(d));
 const onVoice = (d: Data<"voice">) => store.dispatch(voiceSet(d));
 const onIdentity = (d: Data<"identity">) => store.dispatch(identitySet(d));
 const onJob = (d: Data<"job">) => store.dispatch(jobSet(d));
+const onKeyHints = (d: Data<"keyHints">) => store.dispatch(keyHintsSet(d));
 
 // Stable mock references: a new object per render would fire the browser mock again.
 const SETUP = { mockData: MOCK_SETUP, mockDelay: 50 };
@@ -59,6 +62,7 @@ const STREET = { mockData: MOCK_STREET, mockDelay: 50 };
 const VOICE = { mockData: MOCK_VOICE, mockDelay: 50 };
 const IDENTITY = { mockData: MOCK_IDENTITY, mockDelay: 50 };
 const JOB = { mockData: MOCK_JOB, mockDelay: 50 };
+const HINTS = { mockData: MOCK_HINTS, mockDelay: 50 };
 
 export function App() {
   useNuiEvent("setup", onSetup, SETUP);
@@ -71,6 +75,7 @@ export function App() {
   useNuiEvent("voice", onVoice, VOICE);
   useNuiEvent("identity", onIdentity, IDENTITY);
   useNuiEvent("job", onJob, JOB);
+  useNuiEvent("keyHints", onKeyHints, HINTS);
   useEffect(
     () => void fetchNui("ready", undefined, { mockData: { ok: true } }),
     [],

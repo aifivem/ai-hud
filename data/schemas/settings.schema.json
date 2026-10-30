@@ -38,6 +38,17 @@
         "mph"
       ]
     },
+    "keyHints": {
+      "description": "Key hints: The keys of what the player can do now (on foot, in a vehicle) on the left of the screen. Which keys show, and when, is set per key in the Server panel's Keybinds tab.",
+      "type": "boolean"
+    },
+    "minimap": {
+      "description": "Minimap: Always, or only while in a vehicle. Players can still turn it on for themselves in /hud.",
+      "enum": [
+        "always",
+        "vehicle"
+      ]
+    },
     "show": {
       "type": "object",
       "properties": {
