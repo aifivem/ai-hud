@@ -1,6 +1,7 @@
 import {
   AdminWorld,
   cache,
+  every,
   getPlayerData,
   hud as uiHud,
   loadLocaleTexts,
@@ -157,8 +158,8 @@ uiHud.onChange((visible) => {
   hud.uiAllows = visible;
   hud.updateVisible();
 });
-setInterval(() => hud.updateVisible(), 250);
-setInterval(() => hud.starve(), 10_000);
+every(250, () => hud.updateVisible(), { name: "visible" });
+every(10_000, () => hud.starve(), { name: "starve" });
 
 // Identity seeds ai-core's player data first: the watchers read money from it.
 identity.start();

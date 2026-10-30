@@ -1,4 +1,10 @@
-import { cache, inventory, onCache } from "@aicore-fivem/lib/client";
+import {
+  cache,
+  every,
+  inventory,
+  type Job,
+  onCache,
+} from "@aicore-fivem/lib/client";
 import type { WeaponInfo } from "common/hud";
 import { send } from "./watchers";
 
@@ -7,7 +13,7 @@ import { send } from "./watchers";
  * only while a weapon is held, sent only when a value changed.
  */
 export class WeaponWatch {
-  private timer: ReturnType<typeof setInterval> | null = null;
+  private timer: Job | null = null;
   private last = "";
   /** Label and picture of the held weapon item (ai-core's inventory layer, whatever inventory runs). */
   private meta: { label: string; image?: string } | null = null;
@@ -18,12 +24,12 @@ export class WeaponWatch {
   }
 
   private watch(weapon: number | false): void {
-    if (this.timer) clearInterval(this.timer);
+    this.timer?.stop();
     this.timer = null;
     this.last = "";
     if (weapon === false) return send({ action: "weapon", data: null });
     this.meta = inventory.currentWeapon();
-    this.timer = setInterval(() => this.read(weapon), 250);
+    this.timer = every(250, () => this.read(weapon), { name: "weapon" });
     this.read(weapon);
   }
 

@@ -6,7 +6,9 @@ import {
 import {
   cache,
   EntityState,
+  every,
   getPlayerData,
+  type Job,
   onCache,
   onPlayerData,
   optionalExport,
@@ -26,8 +28,19 @@ const fuelState = new EntityState(VEHICLE_BAGS.fuel, stateNumber);
 const voiceRange = new PlayerState(PLAYER_BAGS.proximity, (v) =>
   isRecord(v) && typeof v.index === "number" ? v.index : undefined,
 );
-let seatbelt: boolean | null =
-  optionalExport("ai-smallresources")?.GetSeatbelt() ?? null;
+/**
+ * ai-smallresources' seat belt now. Read when a vehicle is entered, not at load: the client may load ai-hud before
+ * ai-smallresources has registered the export (a throw here would stop the whole HUD).
+ */
+function readSeatbelt(): boolean | null {
+  try {
+    return optionalExport("ai-smallresources")?.GetSeatbelt() ?? null;
+  } catch {
+    // Not registered yet: SEATBELT_EVENT brings the value once it is.
+    return null;
+  }
+}
+let seatbelt: boolean | null = null;
 on(
   SEATBELT_EVENT,
   (worn: unknown) => (seatbelt = typeof worn === "boolean" ? worn : null),
@@ -60,15 +73,15 @@ export class Watchers {
   private mode = 2;
   private sentMode = 2;
   private sentRadio = false;
-  private vehicleTimer: ReturnType<typeof setInterval> | null = null;
+  private vehicleTimer: Job | null = null;
   private lastVehicle = "";
 
   constructor(private readonly settings: () => Settings) {}
 
   start(): void {
-    setInterval(() => this.vitals(), 250);
-    setInterval(() => this.location(), 1000);
-    setInterval(() => this.voice(), 200);
+    every(250, () => this.vitals(), { name: "vitals" });
+    every(1000, () => this.location(), { name: "location" });
+    every(200, () => this.voice(), { name: "voice" });
     onCache("vehicle", (vehicle) => this.watchVehicle(vehicle));
     this.watchVehicle(cache.vehicle);
     onPlayerData("money", (money) => send({ action: "money", data: money }));
@@ -131,11 +144,14 @@ export class Watchers {
   }
 
   private watchVehicle(vehicle: number | false): void {
-    if (this.vehicleTimer) clearInterval(this.vehicleTimer);
+    if (vehicle !== false) seatbelt = readSeatbelt();
+    this.vehicleTimer?.stop();
     this.vehicleTimer = null;
     this.lastVehicle = "";
     if (vehicle === false) return send({ action: "vehicle", data: null });
-    this.vehicleTimer = setInterval(() => this.vehicle(vehicle), 100);
+    this.vehicleTimer = every(100, () => this.vehicle(vehicle), {
+      name: "vehicle",
+    });
   }
 
   private vehicle(vehicle: number): void {

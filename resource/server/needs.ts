@@ -1,5 +1,6 @@
 import {
   AdminPanel,
+  every,
   onCharacter,
   onClientEvent,
   PlayerMap,
@@ -84,7 +85,7 @@ onCharacter({
   loaded: (source) => needs.load(source),
   unloaded: (source) => needs.drop(source),
 });
-setInterval(() => needs.tick(), 60_000);
+every(60_000, () => needs.tick(), { name: "needs" });
 
 // Items with hunger / thirst / stress values (ai-core's item use event).
 on(CORE.itemUsedEvent, (source: number, _name: string, status: unknown) => {
