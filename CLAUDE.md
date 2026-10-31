@@ -22,7 +22,7 @@ The HUD (lumihud-style status pills, money, speedometer, street, voice) and the 
 
 - Events: `resource/common/hud.ts`. Client exports `OpenSettings()`, `SetMinimapAlways(on)`, `GetMinimapAlways()`; command `hud`. Server exports `GetNeeds(source)`, `SetNeed(source, need, value)`, `AddNeed(source, need, delta)`.
 - Listens to ai-core's `itemUsed` (status values, from inventories that define them) and ai-core's `playerLoaded` / `playerUnloaded` / `jobsChanged` / `dutyChanged`; reads `GetJobs`, `GetDutyJob`, `GetJobDefinitions` only when the shown job may have changed.
-- Reads the vehicle state bag `VEHICLE_BAGS.fuel` (a fuel script sets it), the player bag `PLAYER_BAGS.proximity` (pma-voice / ai-voice range), the seat belt from ai-smallresources' `SEATBELT_EVENT` and `GetSeatbelt()` export and pma-voice's local events.
+- Reads the vehicle state bag `VEHICLE_BAGS.fuel` (a fuel script sets it), the player bag `PLAYER_BAGS.proximity` (pma-voice / ai-voice range), the seat belt through lib `seatbelt` (ai-core's seat belt layer: `isOn()` on vehicle entry, `onChange`) and pma-voice's local events.
 
 ## Entry points
 

@@ -1,20 +1,15 @@
-import {
-  PLAYER_BAGS,
-  SEATBELT_EVENT,
-  VEHICLE_BAGS,
-} from "@aicore-fivem/shared";
+import { PLAYER_BAGS } from "@aicore-fivem/shared";
 import {
   cache,
-  EntityState,
   every,
+  fuel as fuelOf,
   getPlayerData,
   type Job,
   locationName,
   onCache,
   onPlayerData,
-  optionalExport,
   PlayerState,
-  stateNumber,
+  seatbelt as belts,
 } from "@aicore-fivem/lib/client";
 import { isRecord, rollChance } from "@aicore-fivem/lib/shared";
 import {
@@ -24,28 +19,24 @@ import {
   type VehicleInfo,
 } from "common/hud";
 
-const fuelState = new EntityState(VEHICLE_BAGS.fuel, stateNumber);
 /** pma-voice keeps the current range in the player state (`proximity.index`). */
 const voiceRange = new PlayerState(PLAYER_BAGS.proximity, (v) =>
   isRecord(v) && typeof v.index === "number" ? v.index : undefined,
 );
 /**
- * ai-smallresources' seat belt now. Read when a vehicle is entered, not at load: the client may load ai-hud before
- * ai-smallresources has registered the export (a throw here would stop the whole HUD).
+ * The seat belt now (lib `seatbelt`, whatever belt script runs). Read when a vehicle is entered, not at load: the
+ * client may load ai-hud before ai-core has registered the export (a throw here would stop the whole HUD).
  */
 function readSeatbelt(): boolean | null {
   try {
-    return optionalExport("ai-smallresources")?.GetSeatbelt() ?? null;
+    return belts.isOn();
   } catch {
-    // Not registered yet: SEATBELT_EVENT brings the value once it is.
+    // Not registered yet: the change event brings the value once it is.
     return null;
   }
 }
 let seatbelt: boolean | null = null;
-on(
-  SEATBELT_EVENT,
-  (worn: unknown) => (seatbelt = typeof worn === "boolean" ? worn : null),
-);
+belts.onChange((worn) => (seatbelt = worn));
 
 /** Vehicle classes without a seatbelt: motorcycles, cycles, boats, helicopters, planes, trains. */
 const NO_BELT = new Set([8, 13, 14, 15, 16, 21]);
@@ -157,9 +148,7 @@ export class Watchers {
     const speed = Math.round(
       this.settings().speedUnit === "mph" ? mps * 2.236936 : mps * 3.6,
     );
-    const fuel = Math.round(
-      fuelState.get(vehicle) ?? GetVehicleFuelLevel(vehicle),
-    );
+    const fuel = Math.round(fuelOf.get(vehicle));
     const belt =
       seatbelt === null || NO_BELT.has(GetVehicleClass(vehicle))
         ? null
