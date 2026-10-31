@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/aifivem/ai-hud/compare/v0.2.0...v0.2.1) (2026-10-31)
+
+
+### Miscellaneous Chores
+
+* rebuild with the current lib ([e4280c8](https://github.com/aifivem/ai-hud/commit/e4280c8f05113629a031c3dae6e65689c02b5563))
+
 ## [0.2.0](https://github.com/aifivem/ai-hud/compare/v0.1.0...v0.2.0) (2026-10-31)
 
 
