@@ -1,4 +1,5 @@
 import {
+  definitions,
   onCharacter,
   onClientCallback,
   online,
@@ -22,8 +23,7 @@ class JobLabels {
     const pick = core.GetCurrentJob(source);
     if (!pick) return null;
     const duty = online.dutyJob(source);
-    // Definitions are read only here: the shown job changes rarely and only on load, job or duty changes.
-    const definition = core.GetJobDefinition(pick.job);
+    const definition = definitions.job(pick.job);
     return {
       label: definition?.label ?? pick.job,
       grade: definition?.grades[pick.grade]?.label ?? "",
