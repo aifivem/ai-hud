@@ -7,7 +7,7 @@
   "author": {
     "name": "TGIANN"
   },
-  "repository": "github:TGIANN/ai-hud",
+  "repository": "github:aifivem/ai-hud",
   "type": "module",
   "fxDependencies": [
     "/onesync",
