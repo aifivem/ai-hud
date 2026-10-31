@@ -16,7 +16,7 @@ import {
   PlayerState,
   stateNumber,
 } from "@aicore-fivem/lib/client";
-import { isRecord } from "@aicore-fivem/lib/shared";
+import { isRecord, rollChance } from "@aicore-fivem/lib/shared";
 import {
   EVENTS,
   type NuiMessage,
@@ -180,7 +180,7 @@ export class Watchers {
     if (
       stressSpeed > 0 &&
       mps * 3.6 > stressSpeed &&
-      Math.random() * 100 < stressSpeedChance
+      rollChance(stressSpeedChance)
     )
       addStress(1);
   }

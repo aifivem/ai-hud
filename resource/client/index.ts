@@ -5,6 +5,7 @@ import {
   getPlayerData,
   hud as uiHud,
   loadLocaleTexts,
+  medical,
   onCache,
   onServerEvent,
   onShot,
@@ -102,7 +103,7 @@ class Hud {
     )
       return;
     const ped = cache.ped;
-    if (!IsEntityDead(ped))
+    if (!medical.isDead())
       SetEntityHealth(
         ped,
         Math.max(0, GetEntityHealth(ped) - this.settings.emptyDamage),

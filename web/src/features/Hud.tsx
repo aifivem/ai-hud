@@ -17,6 +17,7 @@ import { clamp, DANGER, IconCircle, Pill, TEXT_SHADOW, Value } from "./parts";
 import { KeyHints } from "./KeyHints";
 import { Weapon } from "./Weapon";
 import { Speedometer } from "./Speedometer";
+import { groupDigits } from "@aicore-fivem/lib/shared";
 
 /** lumihud status colours (IndicatorBox defaults). */
 const COLOR = {
@@ -260,8 +261,7 @@ function Identity() {
 function Money() {
   const t = useLang();
   const money = useAppSelector((s) => s.hud.money);
-  const format = (n: number | undefined) =>
-    `$${(n ?? 0).toLocaleString("en-US")}`;
+  const format = (n: number | undefined) => `$${groupDigits(n ?? 0)}`;
   return (
     <div className={`flex flex-col items-end gap-[0.5vh] ${TEXT_SHADOW}`}>
       <span
