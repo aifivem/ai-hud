@@ -12,7 +12,12 @@ import {
   resourceExport,
 } from "@aicore-fivem/lib/client";
 import { isRecord, readFinite } from "@aicore-fivem/lib/shared";
-import { CORE, KEY_HINTS, type KeyHintView } from "@aicore-fivem/shared";
+import {
+  CORE,
+  KEY_HINTS,
+  type KeyHintView,
+  NUI_LAYER,
+} from "@aicore-fivem/shared";
 import {
   DEFAULT_NEEDS,
   EVENTS,
@@ -26,6 +31,9 @@ import { Identity } from "./identity";
 import { effective, openSettings, radar, registerHudExports } from "./prefs";
 import { addStress, send, Watchers } from "./watchers";
 import { WeaponWatch } from "./weapon";
+
+// Stacking among NUI pages (`NUI_LAYER`): set at start, not left to load order.
+SetNuiZindex(NUI_LAYER.hud);
 
 const core = resourceExport("ai-core");
 const isHint = (v: unknown): v is KeyHintView =>
