@@ -228,6 +228,8 @@ const CORE = {
 	clientCancelProgressEvent: "ai-core:client:cancelProgress",
 	clientDefinitionsEvent: "ai-core:client:definitions",
 	vehicleTypeCallback: "ai-core:vehicleType",
+	progressForCallback: "ai-core:progressFor",
+	progressForCancelEvent: "ai-core:client:progressForCancel",
 	interactionStateKey: "ai:interaction",
 	charactersCallback: "ai-core:characters",
 	createCharacterCallback: "ai-core:createCharacter",
@@ -975,6 +977,12 @@ function onCharacter(handlers) {
 		}
 	});
 }
+// ../../../packages/lib/src/server/progressFor.ts
+const running = new PlayerMap({ onDrop: (_source, settle) => settle(!1) });
+on(CORE.playerUnloadedEvent, (source) => {
+	let settle = running.get(source);
+	settle && settle(!1);
+});
 // ../../../packages/lib/src/server/command.ts
 const resource = GetCurrentResourceName(), log$3 = createLogger(resource);
 let texts = null;
