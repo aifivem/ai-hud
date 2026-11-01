@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/aifivem/ai-hud/compare/v0.2.1...v0.2.2) (2026-11-01)
+
+
+### Code Refactoring
+
+* feature folders, side entries that only import, panel schema per tab ([c6771e4](https://github.com/aifivem/ai-hud/commit/c6771e4f2a2982c2713b7d3f70ddb195368ccad6))
+
 ## [0.2.1](https://github.com/aifivem/ai-hud/compare/v0.2.0...v0.2.1) (2026-10-31)
 
 
