@@ -72,3 +72,5 @@ export class Identity {
     send({ action: "job", data: job });
   }
 }
+
+export const identity = new Identity();

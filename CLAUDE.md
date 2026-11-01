@@ -28,5 +28,5 @@ The HUD (lumihud-style status pills, money, speedometer, street, voice) and the 
 
 - Needs: `resource/server/needs.ts`; panel `server/schema.ts`.
 - Job labels: `resource/server/job.ts`.
-- Client: state and visibility `resource/client/index.ts`, value watchers `client/watchers.ts`, name and job `client/identity.ts`.
-- NUI: `web/src/features/Hud.tsx`; browser preview `bun run webdev` (`?vehicle=1&radio=1&offduty=1`).
+- Client: state `resource/client/hud/state.ts`, its events and visibility `client/hud/index.ts`, watcher start order `client/start.ts`, value watchers `client/watchers.ts`, name and job `client/identity.ts`.
+- NUI: `web/src/features/Hud.tsx` (status row `Status.tsx` / `Needs.tsx` / `Voice.tsx`, name and money `TopRight.tsx`); browser preview `bun run webdev` (`?vehicle=1&radio=1&offduty=1`).
