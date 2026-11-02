@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/aifivem/ai-hud/compare/v0.2.4...v0.3.0) (2026-11-02)
+
+
+### New Features
+
+* **hud:** add hunger and thirst warnings, vehicle minimap zoom and waypoint colour ([c0c64ba](https://github.com/aifivem/ai-hud/commit/c0c64baa171a5784c985dc79f63dc96f1762a0d1))
+* **hud:** merge low-need dizziness and health loss into one system with a switch each ([40bc842](https://github.com/aifivem/ai-hud/commit/40bc84261b106fbf34f05efed2be5fab10e4db31))
+
+
+### Code Refactoring
+
+* **hud:** draw hunger and thirst from ai-core and keep only stress ([b8f2322](https://github.com/aifivem/ai-hud/commit/b8f23220bf4b6667e0b1ce13a863747d4fd4931a))
+
 ## [0.2.4](https://github.com/aifivem/ai-hud/compare/v0.2.3...v0.2.4) (2026-11-02)
 
 
