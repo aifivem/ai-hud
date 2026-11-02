@@ -68,8 +68,6 @@ export interface Settings {
   stressSpeedChance: number;
   /** Stress points a shot adds (at most once a second). */
   stressShot: number;
-  /** Health lost every 10 s while hunger or thirst is at 0. */
-  emptyDamage: number;
   speedUnit: "kmh" | "mph";
   /** Key hints on the left (ai-core's list: keybinds for the situation and hints scripts add). */
   keyHints: boolean;
@@ -79,7 +77,7 @@ export interface Settings {
   minimapZoom: number;
   /** The waypoint's colour (HUD colour 142), or null for the game's own. */
   waypointColor: string | null;
-  /** Low hunger / thirst notifications and the faint below the critical level. */
+  /** Low hunger / thirst: notifications, and below the critical level dizziness and health loss. */
   warnings: NeedWarningSettings;
   show: {
     needs: boolean;
@@ -96,14 +94,18 @@ export interface NeedWarningSettings {
   notify: boolean;
   lowAt: number;
   notifyEvery: number;
-  /** Below `criticalAt`: the screen fades out and in and health drops by `damage`, every `faintEvery` seconds. */
-  faint: boolean;
+  /** Below this, dizziness and health loss (each switched on its own) and the critical notification. */
   criticalAt: number;
+  /** Dizziness: the screen fades out and in every `faintEvery` seconds. */
+  faint: boolean;
   faintEvery: number;
   /** Seconds the fade out / in takes. */
   fadeOut: number;
   fadeIn: number;
+  /** Health loss: `damage` health every `hurtEvery` seconds. */
+  hurt: boolean;
   damage: number;
+  hurtEvery: number;
 }
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -120,7 +122,6 @@ export function readSettings(raw: unknown): Settings {
     stressSpeed: num(s.stressSpeed, 160, 0, 500),
     stressSpeedChance: num(s.stressSpeedChance, 1, 0, 100),
     stressShot: int(s.stressShot, 1, 0, 5),
-    emptyDamage: num(s.emptyDamage, 2, 0, 50),
     speedUnit: s.speedUnit === "mph" ? "mph" : "kmh",
     keyHints: bool(s.keyHints, true),
     minimap: s.minimap === "vehicle" ? "vehicle" : "always",
@@ -139,7 +140,9 @@ export function readSettings(raw: unknown): Settings {
       faintEvery: int(w.faintEvery, 20, 10, 3600),
       fadeOut: num(w.fadeOut, 4.5, 0.5, 10),
       fadeIn: num(w.fadeIn, 2.5, 0.5, 10),
-      damage: num(w.damage, 2, 0, 50),
+      hurt: bool(w.hurt, true),
+      damage: num(w.damage, 2, 1, 50),
+      hurtEvery: int(w.hurtEvery, 10, 5, 3600),
     },
     show: {
       needs: bool(show.needs, true),

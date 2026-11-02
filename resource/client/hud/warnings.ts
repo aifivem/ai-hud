@@ -11,8 +11,9 @@ import { Locale } from "common";
 import type { NeedWarningSettings, Needs, Settings } from "common/hud";
 
 /**
- * Low hunger / thirst: a notification at most every `notifyEvery` s; below the critical level a dizzy spell (fade out,
- * health loss, fade in) every `faintEvery` s instead. The 1 s job runs only while a loaded character is below a level.
+ * Low hunger / thirst, one system: a notification below `lowAt` (the critical text below `criticalAt`) at most every
+ * `notifyEvery` s; below `criticalAt` dizziness (fade out and in, every `faintEvery` s) and health loss (`damage`
+ * every `hurtEvery` s), each switched on its own. The 1 s job runs only while a loaded character is below a level.
  */
 export class NeedWarnings {
   private readonly job = every(1000, () => this.check(), {
@@ -21,6 +22,7 @@ export class NeedWarnings {
   });
   private nextNotify = 0;
   private nextFaint = 0;
+  private nextHurt = 0;
   private fainting = false;
 
   constructor(
@@ -39,29 +41,40 @@ export class NeedWarnings {
     const low = Math.min(this.needs.hunger, this.needs.thirst);
     this.job.set(
       loaded &&
-        ((w.notify && low < w.lowAt) || (w.faint && low < w.criticalAt)),
+        ((w.notify && low < w.lowAt) ||
+          ((w.faint || w.hurt) && low < w.criticalAt)),
     );
   }
 
   private check(): void {
-    if (this.fainting || medical.isDead()) return;
-    const { warnings: w, emptyDamage } = this.settings();
+    if (medical.isDead()) return;
+    const w = this.settings().warnings;
     const { hunger, thirst } = this.needs;
     const now = GetGameTimer();
-    if (w.faint && Math.min(hunger, thirst) < w.criticalAt) {
-      // Another script's fade (teleport, spawn) owns the screen: try again next second.
-      if (now < this.nextFaint || !IsScreenFadedIn()) return;
+    const critical = Math.min(hunger, thirst) < w.criticalAt;
+    if (critical && w.hurt && now >= this.nextHurt) {
+      this.nextHurt = now + w.hurtEvery * 1000;
+      // The client owns its ped's health.
+      const ped = cache.ped;
+      SetEntityHealth(ped, Math.max(0, GetEntityHealth(ped) - w.damage));
+    }
+    // Another script's fade (teleport, spawn) owns the screen: try again next second.
+    if (
+      critical &&
+      w.faint &&
+      !this.fainting &&
+      now >= this.nextFaint &&
+      IsScreenFadedIn()
+    ) {
       this.nextFaint = now + w.faintEvery * 1000;
-      // Empty food or water already costs `emptyDamage` every 10 s (`Hud.starve`): never both.
-      const empty = emptyDamage > 0 && (hunger <= 0 || thirst <= 0);
-      void this.faint(w, empty ? 0 : w.damage);
-      return;
+      void this.faint(w);
     }
     if (!w.notify || now < this.nextNotify) return;
     const hungry = hunger < w.lowAt;
     const thirsty = thirst < w.lowAt;
-    if (!hungry && !thirsty) return;
+    if (!hungry && !thirsty && !critical) return;
     this.nextNotify = now + w.notifyEvery * 1000;
+    if (critical) return notify(Locale("NEED_CRITICAL"), "error");
     notify(
       Locale(
         hungry && thirsty
@@ -74,16 +87,10 @@ export class NeedWarnings {
     );
   }
 
-  private async faint(w: NeedWarningSettings, damage: number): Promise<void> {
+  private async faint(w: NeedWarningSettings): Promise<void> {
     this.fainting = true;
-    notify(Locale("NEED_CRITICAL"), "error");
     try {
       await fadeOut(w.fadeOut * 1000);
-      // The client owns its ped's health, as for empty needs.
-      if (damage > 0 && !medical.isDead()) {
-        const ped = cache.ped;
-        SetEntityHealth(ped, Math.max(0, GetEntityHealth(ped) - damage));
-      }
       await fadeIn(w.fadeIn * 1000);
     } finally {
       this.fainting = false;

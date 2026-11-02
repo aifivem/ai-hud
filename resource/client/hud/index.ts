@@ -81,4 +81,3 @@ uiHud.onChange((visible) => {
   hud.updateVisible();
 });
 every(250, () => hud.updateVisible(), { name: "visible" });
-every(10_000, () => hud.starve(), { name: "starve" });

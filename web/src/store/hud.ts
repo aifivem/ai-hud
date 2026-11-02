@@ -40,7 +40,6 @@ const initialState: HudState = {
     stressSpeed: 0,
     stressSpeedChance: 0,
     stressShot: 0,
-    emptyDamage: 0,
     speedUnit: "kmh",
     keyHints: true,
     minimap: "always",
@@ -55,7 +54,9 @@ const initialState: HudState = {
       faintEvery: 20,
       fadeOut: 4.5,
       fadeIn: 2.5,
-      damage: 0,
+      hurt: false,
+      damage: 1,
+      hurtEvery: 10,
     },
     show: {
       needs: true,

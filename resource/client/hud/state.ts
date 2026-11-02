@@ -1,9 +1,4 @@
-import {
-  AdminWorld,
-  cache,
-  loadLocaleTexts,
-  medical,
-} from "@aifivem/lib/client";
+import { AdminWorld, loadLocaleTexts } from "@aifivem/lib/client";
 import {
   DEFAULT_NEEDS,
   NEEDS,
@@ -76,22 +71,6 @@ class Hud {
     if (next === this.visible) return;
     this.visible = next;
     send({ action: "visible", data: next });
-  }
-
-  /** Empty hunger or thirst hurts (the client owns its ped's health). */
-  starve(): void {
-    if (
-      !this.loaded ||
-      this.settings.emptyDamage <= 0 ||
-      (this.needs.hunger > 0 && this.needs.thirst > 0)
-    )
-      return;
-    const ped = cache.ped;
-    if (!medical.isDead())
-      SetEntityHealth(
-        ped,
-        Math.max(0, GetEntityHealth(ped) - this.settings.emptyDamage),
-      );
   }
 }
 
