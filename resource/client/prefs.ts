@@ -3,7 +3,7 @@ import {
   menu,
   registerExport,
   TickLoop,
-} from "@aicore-fivem/lib/client";
+} from "@aifivem/lib/client";
 import { Locale } from "common";
 import { readPrefs, type Prefs, type Settings } from "common/hud";
 

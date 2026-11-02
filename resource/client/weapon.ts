@@ -4,7 +4,7 @@ import {
   inventory,
   type Job,
   onCache,
-} from "@aicore-fivem/lib/client";
+} from "@aifivem/lib/client";
 import type { WeaponInfo } from "common/hud";
 import { send } from "./watchers";
 

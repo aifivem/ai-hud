@@ -3,7 +3,7 @@ import {
   cache,
   loadLocaleTexts,
   medical,
-} from "@aicore-fivem/lib/client";
+} from "@aifivem/lib/client";
 import {
   DEFAULT_NEEDS,
   NEEDS,

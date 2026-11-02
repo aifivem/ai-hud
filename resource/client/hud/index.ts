@@ -6,14 +6,14 @@ import {
   onServerEvent,
   onShot,
   resourceExport,
-} from "@aicore-fivem/lib/client";
-import { isRecord, readFinite } from "@aicore-fivem/lib/shared";
+} from "@aifivem/lib/client";
+import { isRecord, readFinite } from "@aifivem/lib/shared";
 import {
   CORE,
   KEY_HINTS,
   type KeyHintView,
   NUI_LAYER,
-} from "@aicore-fivem/shared";
+} from "@aifivem/shared";
 import { EVENTS, NEEDS, type Need } from "common/hud";
 import { identity } from "../identity";
 import { openSettings, registerHudExports } from "../prefs";

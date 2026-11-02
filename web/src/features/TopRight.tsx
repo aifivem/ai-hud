@@ -1,4 +1,4 @@
-import { groupDigits } from "@aicore-fivem/lib/shared";
+import { groupDigits } from "@aifivem/lib/shared";
 import { useLang } from "../lib/lang";
 import { useAppSelector } from "../store/hud";
 import { TEXT_SHADOW } from "./parts";

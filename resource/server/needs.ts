@@ -6,9 +6,9 @@ import {
   PlayerMap,
   registerExport,
   resourceExport,
-} from "@aicore-fivem/lib/server";
-import { isRecord, oneArg, readFinite } from "@aicore-fivem/lib/shared";
-import { CORE } from "@aicore-fivem/shared";
+} from "@aifivem/lib/server";
+import { isRecord, oneArg, readFinite } from "@aifivem/lib/shared";
+import { CORE } from "@aifivem/shared";
 import {
   DEFAULT_NEEDS,
   EVENTS,

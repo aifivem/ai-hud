@@ -6,9 +6,9 @@ import {
   resourceExport,
   seedPlayerData,
   triggerServerCallback,
-} from "@aicore-fivem/lib/client";
-import { createLogger } from "@aicore-fivem/lib/shared";
-import type { CharacterInfo } from "@aicore-fivem/shared";
+} from "@aifivem/lib/client";
+import { createLogger } from "@aifivem/lib/shared";
+import type { CharacterInfo } from "@aifivem/shared";
 import { EVENTS, readJob, type JobView } from "common/hud";
 import { ResourceName } from "common/resource";
 import { send } from "./watchers";

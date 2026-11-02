@@ -1,5 +1,5 @@
-import { bool, int, num, record } from "@aicore-fivem/lib/shared";
-import type { KeyHintView } from "@aicore-fivem/shared";
+import { bool, int, num, record } from "@aifivem/lib/shared";
+import type { KeyHintView } from "@aifivem/shared";
 
 /** ai-hud's contracts: needs, panel settings, events and the NUI messages. No natives. */
 

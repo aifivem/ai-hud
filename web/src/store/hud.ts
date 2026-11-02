@@ -4,7 +4,7 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
-import type { KeyHintView } from "@aicore-fivem/shared";
+import type { KeyHintView } from "@aifivem/shared";
 import type {
   JobView,
   Needs,
