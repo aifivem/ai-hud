@@ -1,6 +1,6 @@
 {
   "name": "ai-hud",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "private": true,
   "description": "HUD (health, hunger, thirst, stress, money, speedometer) and the stress rules",
   "license": "GPL-3.0-only",
