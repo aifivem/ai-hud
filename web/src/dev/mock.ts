@@ -12,6 +12,7 @@ export const MOCK_SETUP = {
     speedUnit: "kmh",
     keyHints: true,
     minimap: "always",
+    waypointColor: null,
   } satisfies Settings,
 };
 export const MOCK_NEEDS = { hunger: 64, thirst: 18, stress: 42 };

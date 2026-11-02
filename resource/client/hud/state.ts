@@ -13,7 +13,9 @@ import {
   type Settings,
 } from "common/hud";
 import { effective, radar } from "../prefs";
+import { waypointColor } from "../waypoint";
 import { send } from "../watchers";
+import { NeedWarnings } from "./warnings";
 
 /**
  * The HUD's own state: panel settings, the character's needs (server snapshot + deltas), whether it shows. It shows
@@ -23,6 +25,7 @@ class Hud {
   private readonly world = new AdminWorld(["settings"]);
   private readonly view = this.world.view("settings", readSettings);
   readonly needs: Needs = { ...DEFAULT_NEEDS };
+  readonly warnings = new NeedWarnings(this.needs, () => this.settings);
   loaded = false;
   private visible = false;
 
@@ -41,6 +44,8 @@ class Hud {
     });
     radar.update(this.visible, this.settings);
     send({ action: "radar", data: radar.visible });
+    waypointColor.apply(this.settings.waypointColor);
+    this.warnings.update(this.loaded);
   }
 
   setNeeds(raw: Record<string, unknown>): void {
@@ -48,11 +53,13 @@ class Hud {
       if (typeof raw[need] === "number") this.needs[need] = raw[need];
     this.loaded = true;
     send({ action: "needs", data: this.needs });
+    this.warnings.update(true);
   }
 
   setNeed(need: Need, value: number): void {
     this.needs[need] = value;
     send({ action: "needs", data: { [need]: value } });
+    this.warnings.update(this.loaded);
   }
 
   /** False while a full-screen UI is open (ai-core's HUD visibility, lib `hud`). */

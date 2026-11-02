@@ -75,6 +75,12 @@ export interface Settings {
   keyHints: boolean;
   /** The minimap on foot too, or only in a vehicle. */
   minimap: "always" | "vehicle";
+  /** `SetRadarZoom` level while in a vehicle (0 = the game's own zoom). */
+  minimapZoom: number;
+  /** The waypoint's colour (HUD colour 142), or null for the game's own. */
+  waypointColor: string | null;
+  /** Low hunger / thirst notifications and the faint below the critical level. */
+  warnings: NeedWarningSettings;
   show: {
     needs: boolean;
     money: boolean;
@@ -85,9 +91,28 @@ export interface Settings {
   };
 }
 
+export interface NeedWarningSettings {
+  /** Notify below `lowAt` (hungry, thirsty or both), at most every `notifyEvery` seconds. */
+  notify: boolean;
+  lowAt: number;
+  notifyEvery: number;
+  /** Below `criticalAt`: the screen fades out and in and health drops by `damage`, every `faintEvery` seconds. */
+  faint: boolean;
+  criticalAt: number;
+  faintEvery: number;
+  /** Seconds the fade out / in takes. */
+  fadeOut: number;
+  fadeIn: number;
+  damage: number;
+}
+
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
 export function readSettings(raw: unknown): Settings {
   const s = record(raw);
   const show = record(s.show);
+  const waypoint = record(s.waypoint);
+  const w = record(s.warnings);
   return {
     hungerRate: num(s.hungerRate, 0.25, 0, 10),
     thirstRate: num(s.thirstRate, 0.35, 0, 10),
@@ -99,6 +124,23 @@ export function readSettings(raw: unknown): Settings {
     speedUnit: s.speedUnit === "mph" ? "mph" : "kmh",
     keyHints: bool(s.keyHints, true),
     minimap: s.minimap === "vehicle" ? "vehicle" : "always",
+    minimapZoom: int(s.minimapZoom, 1100, 0, 1400),
+    waypointColor: bool(waypoint.custom, true)
+      ? typeof waypoint.color === "string" && HEX_COLOR.test(waypoint.color)
+        ? waypoint.color
+        : "#ff4141"
+      : null,
+    warnings: {
+      notify: bool(w.notify, true),
+      lowAt: int(w.lowAt, 15, 1, 100),
+      notifyEvery: int(w.notifyEvery, 60, 10, 3600),
+      faint: bool(w.faint, true),
+      criticalAt: int(w.criticalAt, 5, 1, 100),
+      faintEvery: int(w.faintEvery, 20, 10, 3600),
+      fadeOut: num(w.fadeOut, 4.5, 0.5, 10),
+      fadeIn: num(w.fadeIn, 2.5, 0.5, 10),
+      damage: num(w.damage, 2, 0, 50),
+    },
     show: {
       needs: bool(show.needs, true),
       money: bool(show.money, true),

@@ -62,6 +62,7 @@ onServerEvent(
 );
 on(CORE.clientPlayerUnloadedEvent, () => {
   hud.loaded = false;
+  hud.warnings.update(false);
   hud.updateVisible();
 });
 // Shooting stresses (lib `onShot`: checked every frame only while armed).

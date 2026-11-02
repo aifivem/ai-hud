@@ -1,6 +1,7 @@
 import {
   cache,
   menu,
+  onStop,
   registerExport,
   TickLoop,
 } from "@aifivem/lib/client";
@@ -45,12 +46,14 @@ export function effective(settings: Settings): Settings {
 
 /**
  * The minimap: shown while the HUD shows and the panel says "always" (or the player / an admin wants it on foot),
- * else only in a vehicle. GTA's health and armour bars under it stay hidden while it shows.
+ * else only in a vehicle. GTA's health and armour bars under it stay hidden while it shows. In a vehicle it zooms to the
+ * panel's `minimapZoom` (0 = the game's zoom).
  */
 class Radar {
   adminAlways = false;
   private shown: boolean | null = null;
   private flipped = false;
+  private zoomed = false;
   private readonly scaleform = RequestScaleformMovie("minimap");
   private readonly bars = new TickLoop(() => {
     BeginScaleformMovieMethod(this.scaleform, "SETUP_HEALTH_ARMOUR");
@@ -67,6 +70,11 @@ class Radar {
         cache.vehicle !== false);
     // Always applied: other code (the character screen, a spawn) switches the radar too.
     DisplayRadar(show);
+    // Re-applied on every update (250 ms): the game sets its own zoom again as the vehicle moves.
+    const zoom = show && cache.vehicle !== false ? settings.minimapZoom : 0;
+    if (zoom > 0) SetRadarZoom(zoom);
+    else if (this.zoomed) SetRadarZoom(0);
+    this.zoomed = zoom > 0;
     if (show === this.shown) return false;
     this.shown = show;
     this.bars.set(show);
@@ -85,6 +93,7 @@ class Radar {
 }
 
 export const radar = new Radar();
+onStop(() => SetRadarZoom(0));
 
 const ROWS = [
   ["needs", "HUD_P_NEEDS", "utensils"],
