@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.4](https://github.com/aifivem/ai-hud/compare/v0.2.3...v0.2.4) (2026-11-02)
+
+
+### Documentation
+
+* install from the release zip ([af64c30](https://github.com/aifivem/ai-hud/commit/af64c300c5c2ffade74b49e6da02d88583755f85))
+
+
+### Miscellaneous Chores
+
+* build files are no longer in git, the release zip carries them ([b20618d](https://github.com/aifivem/ai-hud/commit/b20618d16115364e365d2c9ea54f6eac49fcb1ce))
+
 ## [0.2.3](https://github.com/aifivem/ai-hud/compare/v0.2.2...v0.2.3) (2026-11-02)
 
 
