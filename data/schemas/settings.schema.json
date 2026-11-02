@@ -7,18 +7,6 @@
       "type": "string",
       "description": "This file's JSON Schema (for editors)."
     },
-    "hungerRate": {
-      "description": "Hunger drop: Points lost every minute from 100. 0.25 empties in about 6.5 hours of play.",
-      "type": "number",
-      "minimum": 0,
-      "maximum": 10
-    },
-    "thirstRate": {
-      "description": "Thirst drop: Points lost every minute from 100. 0.25 empties in about 6.5 hours of play.",
-      "type": "number",
-      "minimum": 0,
-      "maximum": 10
-    },
     "stressRelief": {
       "description": "Stress fade: Stress points that fade every minute. Shooting and fast driving add stress.",
       "type": "number",
@@ -43,12 +31,6 @@
       "minimum": 0,
       "maximum": 5
     },
-    "emptyDamage": {
-      "description": "Damage when empty: Health lost every 10 seconds while food or water is at 0. 0 turns it off.",
-      "type": "number",
-      "minimum": 0,
-      "maximum": 50
-    },
     "speedUnit": {
       "description": "Speed unit",
       "enum": [
@@ -65,6 +47,32 @@
       "enum": [
         "always",
         "vehicle"
+      ]
+    },
+    "minimapZoom": {
+      "description": "Minimap zoom in vehicles: How far the minimap zooms in while in a vehicle (higher shows less around you, 1100 is close). 0 keeps the game's own zoom.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1400
+    },
+    "waypoint": {
+      "type": "object",
+      "properties": {
+        "custom": {
+          "description": "Own waypoint colour: Paint the map waypoint and its route in the colour below. Off gives the game's purple back.",
+          "type": "boolean"
+        },
+        "color": {
+          "description": "Waypoint colour",
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        }
+      },
+      "required": [
+        "custom",
+        "color"
       ]
     },
     "show": {
@@ -106,13 +114,10 @@
     }
   },
   "required": [
-    "hungerRate",
-    "thirstRate",
     "stressRelief",
     "stressSpeed",
     "stressSpeedChance",
     "stressShot",
-    "emptyDamage",
     "speedUnit",
     "show"
   ]

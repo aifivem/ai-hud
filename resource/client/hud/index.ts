@@ -3,18 +3,13 @@ import {
   getPlayerData,
   hud as uiHud,
   onCache,
+  onPlayerData,
   onServerEvent,
   onShot,
   resourceExport,
 } from "@aifivem/lib/client";
-import { isRecord, readFinite } from "@aifivem/lib/shared";
-import {
-  CORE,
-  KEY_HINTS,
-  type KeyHintView,
-  NUI_LAYER,
-} from "@aifivem/shared";
-import { EVENTS, NEEDS, type Need } from "common/hud";
+import { CORE, KEY_HINTS, type KeyHintView, NUI_LAYER } from "@aifivem/shared";
+import { EVENTS } from "common/hud";
 import { identity } from "../identity";
 import { openSettings, registerHudExports } from "../prefs";
 import { addStress, send } from "../watchers";
@@ -31,9 +26,6 @@ const isHint = (v: unknown): v is KeyHintView =>
   typeof Reflect.get(v, "key") === "string" &&
   typeof Reflect.get(v, "label") === "string";
 
-const isNeed = (v: unknown): v is Need =>
-  typeof v === "string" && (NEEDS as readonly string[]).includes(v);
-
 RegisterNuiCallback("ready", (_d: unknown, cb: (r: unknown) => void) => {
   hud.setup();
   send({ action: "keyHints", data: core.GetKeyHints() });
@@ -43,26 +35,20 @@ RegisterNuiCallback("ready", (_d: unknown, cb: (r: unknown) => void) => {
   if (money) send({ action: "money", data: money });
   cb({ ok: true });
 });
-onServerEvent(
-  EVENTS.needs,
-  {
-    args: ([raw]) => (isRecord(raw) ? [raw] : null),
-  },
-  (raw) => hud.setNeeds(raw),
-);
-onServerEvent(
-  EVENTS.need,
-  {
-    args: ([need, value]) =>
-      isNeed(need) && readFinite(value) !== null
-        ? [need, value as number]
-        : null,
-  },
-  (need, value) => hud.setNeed(need, value),
-);
+// Needs are ai-core's (character metadata): its snapshot at load, then its patches.
+onPlayerData("metadata", (metadata) => hud.setNeeds(metadata));
+hud.setNeeds(getPlayerData("metadata"));
+try {
+  hud.loaded = core.IsPlayerLoaded();
+} catch {
+  // ai-core's client is not up yet (both restarted): its load event sets it.
+}
+on(CORE.clientPlayerLoadedEvent, () => {
+  hud.loaded = true;
+  hud.updateVisible();
+});
 on(CORE.clientPlayerUnloadedEvent, () => {
   hud.loaded = false;
-  hud.warnings.update(false);
   hud.updateVisible();
 });
 // Shooting stresses (lib `onShot`: checked every frame only while armed).

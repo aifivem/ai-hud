@@ -1,7 +1,5 @@
 {
   "$schema": "./schemas/settings.schema.json",
-  "hungerRate": 0.25,
-  "thirstRate": 0.35,
   "stressRelief": 0.5,
   "stressSpeed": 160,
   "stressSpeedChance": 1,
@@ -21,18 +19,5 @@
   "waypoint": {
     "custom": true,
     "color": "#ff4141"
-  },
-  "warnings": {
-    "notify": true,
-    "lowAt": 15,
-    "notifyEvery": 60,
-    "faint": true,
-    "criticalAt": 5,
-    "faintEvery": 20,
-    "fadeOut": 4.5,
-    "fadeIn": 2.5,
-    "damage": 2,
-    "hurt": true,
-    "hurtEvery": 10
   }
 }

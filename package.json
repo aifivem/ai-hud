@@ -2,7 +2,7 @@
   "name": "ai-hud",
   "version": "0.2.4",
   "private": true,
-  "description": "HUD and player needs: hunger, thirst, stress, health, money, speedometer",
+  "description": "HUD (health, hunger, thirst, stress, money, speedometer) and the stress rules",
   "license": "GPL-3.0-only",
   "author": {
     "name": "TGIANN"

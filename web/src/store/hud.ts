@@ -34,8 +34,6 @@ interface HudState {
 const initialState: HudState = {
   // Replaced by the setup message; only shapes the first render.
   settings: {
-    hungerRate: 0,
-    thirstRate: 0,
     stressRelief: 0,
     stressSpeed: 0,
     stressSpeedChance: 0,
@@ -45,19 +43,6 @@ const initialState: HudState = {
     minimap: "always",
     minimapZoom: 0,
     waypointColor: null,
-    warnings: {
-      notify: false,
-      lowAt: 15,
-      notifyEvery: 60,
-      faint: false,
-      criticalAt: 5,
-      faintEvery: 20,
-      fadeOut: 4.5,
-      fadeIn: 2.5,
-      hurt: false,
-      damage: 1,
-      hurtEvery: 10,
-    },
     show: {
       needs: true,
       money: true,

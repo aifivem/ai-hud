@@ -1,6 +1,6 @@
 # ai-hud
 
-HUD and player needs: hunger, thirst, stress, health, money, speedometer.
+The HUD: health, hunger, thirst, stress, money, speedometer. Hunger and thirst are kept and set in ai-core; ai-hud draws them and keeps the stress rules.
 
 Part of [AI Core](https://aifivem.com): a TypeScript FiveM framework where every script is configured in one in-game admin panel, and ESX, QBCore and Qbox scripts run unchanged.
 

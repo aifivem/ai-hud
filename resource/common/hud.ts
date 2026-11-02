@@ -35,6 +35,7 @@ export function readPrefs(raw: unknown): Prefs {
   return out;
 }
 
+/** Drawn from ai-core's player data (character metadata, QB's keys); ai-core writes them. */
 export const NEEDS = ["hunger", "thirst", "stress"] as const;
 export type Need = (typeof NEEDS)[number];
 /** 0-100; hunger and thirst count down (100 = full), stress counts up (0 = calm). */
@@ -43,9 +44,6 @@ export type Needs = Record<Need, number>;
 export const DEFAULT_NEEDS: Needs = { hunger: 100, thirst: 100, stress: 0 };
 
 export const EVENTS = {
-  /** Server -> owner: (needs: Needs) snapshot at load; then (need, value) deltas through `need`. */
-  needs: "ai-hud:client:needs",
-  need: "ai-hud:client:need",
   /** Client -> server: (amount) stress from shooting or speeding; only ever adds. */
   stress: "ai-hud:stress",
   /** Callback: () -> JobView | null, the job the HUD shows (snapshot when the client starts). */
@@ -57,9 +55,6 @@ export const EVENTS = {
 } as const;
 
 export interface Settings {
-  /** Points lost per minute. */
-  hungerRate: number;
-  thirstRate: number;
   /** Stress points that fade per minute. */
   stressRelief: number;
   /** km/h above which driving may add a stress point. */
@@ -77,8 +72,6 @@ export interface Settings {
   minimapZoom: number;
   /** The waypoint's colour (HUD colour 142), or null for the game's own. */
   waypointColor: string | null;
-  /** Low hunger / thirst: notifications, and below the critical level dizziness and health loss. */
-  warnings: NeedWarningSettings;
   show: {
     needs: boolean;
     money: boolean;
@@ -89,35 +82,13 @@ export interface Settings {
   };
 }
 
-export interface NeedWarningSettings {
-  /** Notify below `lowAt` (hungry, thirsty or both), at most every `notifyEvery` seconds. */
-  notify: boolean;
-  lowAt: number;
-  notifyEvery: number;
-  /** Below this, dizziness and health loss (each switched on its own) and the critical notification. */
-  criticalAt: number;
-  /** Dizziness: the screen fades out and in every `faintEvery` seconds. */
-  faint: boolean;
-  faintEvery: number;
-  /** Seconds the fade out / in takes. */
-  fadeOut: number;
-  fadeIn: number;
-  /** Health loss: `damage` health every `hurtEvery` seconds. */
-  hurt: boolean;
-  damage: number;
-  hurtEvery: number;
-}
-
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 export function readSettings(raw: unknown): Settings {
   const s = record(raw);
   const show = record(s.show);
   const waypoint = record(s.waypoint);
-  const w = record(s.warnings);
   return {
-    hungerRate: num(s.hungerRate, 0.25, 0, 10),
-    thirstRate: num(s.thirstRate, 0.35, 0, 10),
     stressRelief: num(s.stressRelief, 0.5, 0, 10),
     stressSpeed: num(s.stressSpeed, 160, 0, 500),
     stressSpeedChance: num(s.stressSpeedChance, 1, 0, 100),
@@ -131,19 +102,6 @@ export function readSettings(raw: unknown): Settings {
         ? waypoint.color
         : "#ff4141"
       : null,
-    warnings: {
-      notify: bool(w.notify, true),
-      lowAt: int(w.lowAt, 15, 1, 100),
-      notifyEvery: int(w.notifyEvery, 60, 10, 3600),
-      faint: bool(w.faint, true),
-      criticalAt: int(w.criticalAt, 5, 1, 100),
-      faintEvery: int(w.faintEvery, 20, 10, 3600),
-      fadeOut: num(w.fadeOut, 4.5, 0.5, 10),
-      fadeIn: num(w.fadeIn, 2.5, 0.5, 10),
-      hurt: bool(w.hurt, true),
-      damage: num(w.damage, 2, 1, 50),
-      hurtEvery: int(w.hurtEvery, 10, 5, 3600),
-    },
     show: {
       needs: bool(show.needs, true),
       money: bool(show.money, true),
