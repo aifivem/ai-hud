@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.3](https://github.com/aifivem/ai-hud/compare/v0.2.2...v0.2.3) (2026-11-02)
+
+
+### Bug Fixes
+
+* **build:** keep the web build in dist/ so release zips have the NUI ([f638059](https://github.com/aifivem/ai-hud/commit/f6380592a8980a9f07e46d76155959125aa6e9c0))
+
+
+### Code Refactoring
+
+* import the shared packages from [@aifivem](https://github.com/aifivem) ([baf440a](https://github.com/aifivem/ai-hud/commit/baf440ae7e92345e2f745eb09968f75c22a1b9e1))
+
 ## [0.2.2](https://github.com/aifivem/ai-hud/compare/v0.2.1...v0.2.2) (2026-11-01)
 
 
